@@ -101,6 +101,26 @@ def create_search_result(search_data):
 
 	return SearchResult.objects.create(search_data = search_data)
 
+
+class FighterModelTest(TestCase):
+	def test_saving_and_retrieving_fighters(self):
+		first_fighter = Fighter()
+		first_fighter.fighter_name = 'The first fighter'
+		first_fighter.save()
+
+		second_fighter = Fighter()
+		second_fighter.fighter_name = 'Fighter the second'
+		second_fighter.save()
+
+		saved_fighters = Fighter.objects.all()
+		self.assertEqual(saved_fighters.count(), 2)
+		
+		first_saved_fighter = saved_fighters[0]
+		second_saved_fighter = saved_fighters[1]
+		self.assertEqual(first_saved_fighter.fighter_name, 'The first fighter')
+		self.assertEqual(second_saved_fighter.fighter_name, 'Fighter the second')
+
+
 class BeautifulSoupTests(TestCase):
 
 	def test_simple(self):

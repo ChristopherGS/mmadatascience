@@ -12,6 +12,9 @@ from .models import Fighter, SearchResult
 def index(request):
 	if request.method == 'POST':
 		full_name = request.POST['firstName'] +" "+request.POST['surname']
+		Fighter.objects.create(fighter_name=full_name) 
+		
+
 		return render(request, 'ufc/index.html', {'search_text':full_name})
 
 	fighter_list = Fighter.objects.all()
