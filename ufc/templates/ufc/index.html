@@ -1,0 +1,50 @@
+{% load staticfiles %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'ufc/css/bootstrap.css' %}" />
+
+<div class="container">
+
+	<div class="row">
+
+		<div class="col-md-6">
+
+			<h1>Python Scraper for UFC Fighters</h1>
+
+			{{fighter_list}}
+
+		</div>
+
+		<div class="col-md-6">
+			
+		</div>
+
+	</div>
+
+	<div class="row">
+
+		<h4>Search for a fighter</h4>
+
+		<form action="search/" method="POST">
+			{% csrf_token %}
+			<label>First Name</label>
+			<input type="text" name="firstName"/>
+
+			<label>Surname Name</label>
+			<input type="text" name="surname"/>
+
+			<label for="search-button"></label>
+			<input id="search-button" value="search" type="submit"/>
+
+
+
+		</form>
+
+	</div>
+
+	<div class="row">
+		{{query}}
+	</div>
+
+
+
+</div>
