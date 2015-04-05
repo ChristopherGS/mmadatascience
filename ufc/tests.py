@@ -1,10 +1,13 @@
 from django.test import TestCase
 
+from django.http import HttpResponse, HttpRequest, HttpResponseRedirect
 from django.core.urlresolvers import reverse
+from django.core.urlresolvers import resolve
 
 from selenium import webdriver
 
 from .models import Fighter, SearchResult
+from ufc.views import index
 
 
 class WebTests(TestCase):
@@ -19,7 +22,24 @@ class WebTests(TestCase):
 	def test_check_browser(self):
 
 		self.browser.get('http://localhost:8000')
-		self.assertIn('Django', self.browser.title)
+		self.assertIn('localhost', self.browser.title)
+
+
+class HomePageTest(TestCase):
+
+	def test_root_url_resolves_to_home_page_view(self):
+		found = resolve('/')
+		self.assertEqual(found.func, index)
+
+	def test_home_page_returns_correct_html(self):
+		request = HttpRequest()
+		response = index(request)
+		#self.assertTrue(response.content.startswith(b'<link rel="stylesheet" type="text/css" href="/static/ufc/css/bootstrap.css" />'))
+		self.assertIn(b'<h1>Python Scraper for UFC Fighters</h1>', response.content)
+		self.assertTrue(response.content.endswith(b'</div>'))
+
+
+
 
 
 #Beautiful soup should be available from index.html
