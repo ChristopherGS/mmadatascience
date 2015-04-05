@@ -24,7 +24,7 @@
 
 		<h4 id="searchBox">Search for a fighter</h4>
 
-		<form action="search/" method="POST">
+		<form action="/" method="POST">
 			{% csrf_token %}
 			<label>First Name</label>
 			<input id="firstName" type="text" name="firstName" placeholder="Enter first name"/>
@@ -43,7 +43,7 @@
 
 	<div class="row">
 		<table id="id_list_table">
-        	<tr><td>{{ new_item_text }}</td></tr>
+        	<tr><td>{{ search_text }}</td></tr>
     	</table>
 	</div>
 

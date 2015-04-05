@@ -75,14 +75,14 @@ class SearchTest(TestCase):
 	def test_home_page_can_save_a_POST_request(self):
 		request = HttpRequest()
 		request.method = 'POST'
-		request.POST['item_text'] = 'A new list item'
+		request.POST['search_name'] = 'A new list item'
 
 		response = index(request)
 
 		self.assertIn('A new list item', response.content.decode())
 		expected_html = render_to_string(
 			'ufc/index.html',
-			{'new_item_text':  'A new list item'}
+			{'search_name':  'A new list item'}
 		)
 		self.assertEqual(response.content.decode(), expected_html)
 

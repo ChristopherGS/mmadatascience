@@ -10,7 +10,8 @@ from .models import Fighter, SearchResult
 
 def index(request):
 	if request.method == 'POST':
-		return render(request, 'ufc/index.html', {'new_item_text':request.POST['item_text']})
+		full_name = request.POST['firstName'] +" "+request.POST['surname']
+		return render(request, 'ufc/index.html', {'search_text':full_name})
 
 	fighter_list = Fighter.objects.all()
 	context = {'fighter_list':fighter_list}
