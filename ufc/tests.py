@@ -1,6 +1,7 @@
 from django.test import TestCase
-
+from django.test import Client
 from django.http import HttpResponse, HttpRequest, HttpResponseRedirect
+
 from django.core.urlresolvers import reverse
 from django.core.urlresolvers import resolve
 
@@ -75,14 +76,17 @@ class SearchTest(TestCase):
 	def test_home_page_can_save_a_POST_request(self):
 		request = HttpRequest()
 		request.method = 'POST'
-		request.POST['search_name'] = 'A new list item'
+		request.POST['firstName'] = 'Jon'
+		request.POST['surname'] = 'Jones'
+
 
 		response = index(request)
+		print response
 
-		self.assertIn('A new list item', response.content.decode())
+		self.assertIn('Jon Jones', response.content.decode())
 		expected_html = render_to_string(
 			'ufc/index.html',
-			{'search_name':  'A new list item'}
+			{'search_text':  'Jon Jones'}
 		)
 		self.assertEqual(response.content.decode(), expected_html)
 
