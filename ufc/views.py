@@ -9,9 +9,13 @@ from .models import Fighter, SearchResult
 
 
 def index(request):
+	if request.method == 'POST':
+		return render(request, 'ufc/index.html', {'new_item_text':request.POST['item_text']})
+
 	fighter_list = Fighter.objects.all()
 	context = {'fighter_list':fighter_list}
 	return render(request, 'ufc/index.html', context)
+
 
 def results(request):
 	search_results = SearchResult.objects.all()

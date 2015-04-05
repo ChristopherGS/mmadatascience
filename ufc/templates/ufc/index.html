@@ -22,15 +22,15 @@
 
 	<div class="row">
 
-		<h4>Search for a fighter</h4>
+		<h4 id="searchBox">Search for a fighter</h4>
 
 		<form action="search/" method="POST">
 			{% csrf_token %}
 			<label>First Name</label>
-			<input type="text" name="firstName"/>
+			<input id="firstName" type="text" name="firstName" placeholder="Enter first name"/>
 
 			<label>Surname Name</label>
-			<input type="text" name="surname"/>
+			<input id="surname" type="text" name="surname" placeholder="Enter surname"/>
 
 			<label for="search-button"></label>
 			<input id="search-button" value="search" type="submit"/>
@@ -42,7 +42,9 @@
 	</div>
 
 	<div class="row">
-		{{query}}
+		<table id="id_list_table">
+        	<tr><td>{{ new_item_text }}</td></tr>
+    	</table>
 	</div>
 
 
