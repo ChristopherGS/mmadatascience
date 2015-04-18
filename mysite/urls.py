@@ -8,6 +8,7 @@ urlpatterns = patterns('',
     url(r'^$', include('ufc.urls', namespace="ufc")),
     # url(r'^blog/', include('blog.urls')),
     #url(r'^`$', mysite.views.home),
+    url(r'^searches/', include('ufc.urls', namespace="ufc")),
 
 
     url(r'^polls/', include('polls.urls', namespace="polls")),

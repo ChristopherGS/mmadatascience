@@ -1,9 +1,6 @@
-{% load staticfiles %}
+{% extends 'ufc/base.html' %}
 
-<link rel="stylesheet" type="text/css" href="{% static 'ufc/css/bootstrap.css' %}" />
-
-<div class="container">
-
+{% block header_text %}
 	<div class="row">
 
 		<div class="col-md-6">
@@ -20,20 +17,24 @@
 
 	</div>
 
+{% endblock %}
+
+{% block body_text %}
+
 	<div class="row">
 
 		<h4 id="searchBox">Search for a fighter</h4>
 
-		<form action="/" method="POST">
+		<form action="/" method="POST" class="text-center">
 			{% csrf_token %}
 			<label>First Name</label>
-			<input id="firstName" type="text" name="firstName" placeholder="Enter first name"/>
+			<input id="firstName" class="input-lg" type="text" name="firstName" placeholder="Enter first name"/>
 
 			<label>Surname Name</label>
-			<input id="surname" type="text" name="surname" placeholder="Enter surname"/>
+			<input id="surname" class="input-lg" type="text" name="surname" placeholder="Enter surname"/>
 
 			<label for="search-button"></label>
-			<input id="search-button" value="search" type="submit"/>
+			<input id="search-button" class="input-lg" value="search" type="submit"/>
 
 
 
@@ -41,12 +42,19 @@
 
 	</div>
 
+{% endblock %}
+
+{% block footer_text %}
+
 	<div class="row">
+
+		<a href="ufc/soup">Soup</a>
+
+
 		<table id="id_list_table">
         	<tr><td>{{ search_text }}</td></tr>
+        	<tr><td>{{ fighter_name }}</td></tr>
     	</table>
 	</div>
 
-
-
-</div>
+{% endblock %}
