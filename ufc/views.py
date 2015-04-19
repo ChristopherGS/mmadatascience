@@ -5,6 +5,7 @@ from django.template import RequestContext, loader
 from django.shortcuts import get_object_or_404, render
 from bs4 import BeautifulSoup
 import sherdog
+import json
 
 
 from .models import Fighter, SearchResult
@@ -69,22 +70,18 @@ def scraper(query_first_name, query_surname):
 	return "scraper starting for %s" % query_first_name
 
 
-def beautiful_soup(request):
+def beautiful_soup(request, fighter):
 	
-	print sherdog.SHERDOG_URL
 
-	scraper = sherdog.Scraper("test")
+	if(fighter == "ronda"):
+		scraper = sherdog.Scraper("test")
+		history = scraper.scrape_fighter("Ronda-Rousey", 73073)
+		json1 = json.dumps(history)
+		print json1 
+		context = {'history':json1}
+		#context = {'history':history}
+		return render(request, 'ufc/results.html', context)
+	else:
+		raise Http404
 
-	scraper.crawl("Anderson Silva")
-
-	#print soup.prettify()
-	#print soup.title
-	#print soup.title.string
-	#print soup.get_text()
-
-	#for link in soup.find_all('a'):
-	#	print(link.get('href'))
-
-	#soup.find_all(text="Elsie")
-	#A tag's children are available in a list called .contents:
-	return render(request, 'ufc/results.html')
+	

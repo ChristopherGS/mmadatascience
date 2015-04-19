@@ -1,6 +1,15 @@
 {% extends 'ufc/base.html' %}
 
+{% load staticfiles %}
+
 {% block header_text %}
+	<div class="row">
+		<div class="col-md-6 col-md-offset-3 jumbotron">
+			<div class="text-center">
+            	<h1>UFC Fighter Record Map</h1>
+            </div>
+	</div>
+
 	<div class="row">
 
 		<div class="col-md-6">
@@ -48,7 +57,7 @@
 
 	<div class="row">
 
-		<a href="ufc/soup">Soup</a>
+		<a href="ufc/soup/ronda">Ronda Rousey</a>
 
 
 		<table id="id_list_table">

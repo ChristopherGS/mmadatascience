@@ -1,7 +1,101 @@
+{% extends 'ufc/base.html' %}
+
+{% load staticfiles %}
+
+{% block d3 %}
+
 <h1>RESULTS</h1>
 
 {{fighter_name}}
 {{fighter_list}}
 
 
-<p>results.html</p>
+
+<h2>Fight history for 
+
+	
+</h2>
+
+<p>test</p>
+
+<ul>
+<li></li>
+</ul>
+
+<!--
+	<tr>
+		<td>Result</td>
+		<td>Opponent</td>
+		<td>Event</td>
+		<td>Date</td>
+		<td>Method</td>
+		<td>Round</td>
+		<td>Time</td>
+		<td>Referee</td>
+	</tr>
+-->
+
+<table border=0>
+<thead>
+    <tr>
+    {% for attr_head in history.keys %}
+       <th>{{ attr_head }}</th>
+    {% endfor %}
+    </tr>
+</thead>
+<tbody>
+    <tr>
+    {% for attr in history.values %}
+        <td>{{ attr }}</td>
+    {% endfor %}
+    </tr>
+</tbody>
+</table>
+
+
+<script type="text/javascript">
+	var yo = {"blah":[1,2,3], "rar":["la","la","la"]};
+	var yol = {{ history|safe }};
+	var blah = [1,2,3];
+
+	function draw(data) {
+		  var lists = d3.select("body").selectAll("ul")
+		      .data(data,function(d,i) { return d.key; });
+		  
+		  lists.enter().append("ul")
+		      .attr("class",function(d) { return d.key });
+		      
+		  lists.exit().remove();
+
+		  var lines = lists.selectAll("li")
+		      .data(function(d) { return d.values}, function(d,i) { console.log(d); return d; });
+		  
+		  lines.enter().append("li")
+		      .text(function(d, i) { return d; });
+		  
+		  lines.exit().remove();
+	}
+
+	console.log(yo);
+	draw(yo);
+
+
+	//var p = d3.select("body").selectAll("p")
+	//	.data(data)
+	//	.enter()
+	//	.append("p")
+	//	.text("hello ");
+
+	//console.log(d3.select("body").data([1]));
+
+	//d3.select("body").append("svg").attr("width", 50).attr("height", 50).append("circle").attr("cx", 25).attr("cy", 25).attr("r", 25).//style("fill", "purple");
+//		.data(data)
+//		.enter()
+//		.append("p")
+//		.text("new paragraph");
+	
+	
+	//console.log(data);
+</script>
+
+{% endblock %}

@@ -1,36 +1,13 @@
 import urllib2
 import requests
-import mechanize
 import html5lib
 import datetime
+import json
 
 from bs4 import BeautifulSoup
 
-print 'blah'
-
 
 SHERDOG_URL = 'http://www.sherdog.com'
-
-#result = requests.get(SHERDOG_URL, verify=False)
-
-#print result.status_code
-
-#print result.headers
-
-#s = requests.Session()
-#result = s.get(SHERDOG_URL)
-
-
-#c = result.content
-
-
-
-
-#r = s.get("http://httpbin.org/cookies")
-#print(r.text)
-# '{"cookies": {"sessioncookie": "123456789"}}'
-#s.auth = ('user', 'pass')
-#s.headers.update({'x-test': 'true'})
 
 class Scraper(object):
 	"""docstring for Sherdog"""
@@ -39,28 +16,30 @@ class Scraper(object):
 		self.arg = arg
 		self.base_url = SHERDOG_URL
 
-		
-	def crawl(self, fighter):
-		print SHERDOG_URL + 'scrape'
 
-		self.scrape_fighter('Ronda-Rousey', 73073)
-		#soup = BeautifulSoup(self.url)
-		#print soup.prettify()
-		return
+	def scrape_fighter(self, name, fighter_id):
 
-	def fetch_url(self, url):
+		"""Retrieve and parse a fighter's details from sherdog.com"""
+		# make sure fighter_id is an int
+		name = str(name)
+		fighter_id = str(fighter_id)
+		base_url = str(self.base_url)
+
+		# fetch the required url and capture the fighter data
+		history = self.process_fighter('/fighter/%s-%s' % (name, fighter_id))
+
+		#print 'scrape fighter data', history
+		return history
+
+
+	def process_fighter(self, url):
 
 		"""Fetch a url and return it's contents as a string"""
 		
 		updated_url = str(self.base_url) + url
 		print "here is the url: %s" % updated_url
 
-		#s = requests.Session()
-		#headers = {'user-agent': 'my-app/0.0.1'}
-		#result = s.get('https://www.sherdog.com', headers=headers, timeout=40, verify=False)
-
-		aurl = 'http://www.sherdog.com/fighter/Luke-Rockhold-23345'
-		source = urllib2.urlopen(aurl).read()
+		source = urllib2.urlopen(updated_url).read()
 		soup = BeautifulSoup(source)
 
 		#print soup.body
@@ -81,9 +60,6 @@ class Scraper(object):
 			else:
 			    birth_date = datetime.datetime.strptime(birth_date, '%Y-%m-%d')
 			    birth_date = birth_date.isoformat()
-
-		print 'birthday', birth_date
-
 
 			# get the fighter's locality
 		try:
@@ -143,25 +119,8 @@ class Scraper(object):
 			'last_fight': last_fight,
 			}
 
-
-		record = soup.find('span', {'class': 'final_result'}).contents[0]
-		# the record table is the second table on the page
 		
-		records = {}
-		records = soup.findAll('table')[1].findAll('tr')
 
-		#for td in soup.select('table(1) > tr > td:nth-of-type(1)'):
-
-		history = {}
-		history['win_loss'] = []
-		history['opponent'] = []
-		history['event'] = []
-		history['date'] = []
-		history['method_general'] = []
-		history['method_specific'] = []
-		history['referee'] = []
-		history['_round'] = []
-		history['time'] = []
 
 		def getEvent(eventString):
 			dateStrings = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -203,10 +162,25 @@ class Scraper(object):
 			else:
 				return eventString[index+1:]
 
+		records = {}
+		records = soup.findAll('table')[1].findAll('tr')
 
+		history = {}
+		history['win_loss'] = []
+		history['opponent'] = []
+		history['event'] = []
+		history['date'] = []
+		history['method_general'] = []
+		history['method_specific'] = []
+		history['referee'] = []
+		history['_round'] = []
+		history['time'] = []
+		history['name'] = result['name']
+
+		
 		for row in records:
 			cells = row.find_all('td')
-			win_loss = [cells[0].get_text()] 
+			win_loss = cells[0].get_text()
 			opponent = cells[1].get_text()
 			event = getEvent(cells[2].get_text())
 			date = getDate(cells[2].get_text()) #print event #need to work magic here to separate date
@@ -226,23 +200,71 @@ class Scraper(object):
 			history['_round'].append(_round)
 			history['time'].append(time)
 
-		
-		print history
 
-		print result
+		def clean_up(history):
 
-		return #result.text
+			for key, value in history.iteritems():
+				if key != "name":
+					value.pop(0)
+				else:
+					pass
+					#print key
 
-	def scrape_fighter(self, name, fighter_id):
+			#history = json.JSONEncoder().encode(history)
+			#print type(history['win_loss'])
 
-		"""Retrieve and parse a fighter's details from sherdog.com"""
-		# make sure fighter_id is an int
-		name = str(name)
-		fighter_id = str(fighter_id)
-		base_url = str(self.base_url)
+			#history['win_loss'] = [x.encode('UTF-8') for x in history['win_loss']]
 
-		# fetch the required url and parse it
-		url_content = self.fetch_url('/fighter/%s-%s' % (name, fighter_id))
+			#history['opponent'] = [x.encode('UTF-8') for x in history['opponent']]
+			#history['opponent'] = [json.dumps(x) for x in history['opponent']]
+
+			#history['event'] = [x.encode('UTF-8') for x in history['event']]
+			#history['date'] = [x.encode('UTF-8') for x in history['date']] # probably not appropriate for date
+			#history['method_general'] = [x.encode('UTF-8') for x in history['method_general']]
+			#history['method_specific'] = [x.encode('UTF-8') for x in history['method_specific']]
+			#history['referee'] = [x.encode('UTF-8') for x in history['referee']]
+			#history['_round'] = [x.encode('UTF-8') for x in history['_round']]
+			#history['time'] = [x.encode('UTF-8') for x in history['time']] 
+
+
+
+			"""
+			for item, value in history.iteritems():
+				if type(value) == list:
+					value = [x.encode('utf-8') for x in value] #apparently, this doesn't work during iteritems()
+					print value
+				elif type(item) != list:
+					pass
+				else:
+					print item
+
+			"""
+			
+		clean_up(history)
+
+
+		#draw on data from result for now
+		#print result
+			
+		#print history
+
+		"""
+		TODO
+
+		<script type="text/javascript">
+			var data = JSON.parse("{{ result }}");
+			run_d3_stuff(data);
+		</script>
+
+		1) convert unicode
+		3) convert to json for D3 visualization
+		4) save info to the db
+		5) show info on the page
+		"""
+
+		return history
+
+	
 
 
 if __name__ == "__main__":
