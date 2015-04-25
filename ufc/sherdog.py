@@ -34,7 +34,7 @@ class Scraper(object):
 
 	def process_fighter(self, url):
 
-		"""Fetch a url and return it's contents as a string"""
+		"""Fetch a url and return its contents as a string"""
 		
 		updated_url = str(self.base_url) + url
 		print "here is the url: %s" % updated_url
@@ -119,8 +119,6 @@ class Scraper(object):
 			'last_fight': last_fight,
 			}
 
-		
-
 
 		def getEvent(eventString):
 			dateStrings = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -164,106 +162,46 @@ class Scraper(object):
 
 		records = {}
 		records = soup.findAll('table')[1].findAll('tr')
-
-		history = {}
-		history['win_loss'] = []
-		history['opponent'] = []
-		history['event'] = []
-		history['date'] = []
-		history['method_general'] = []
-		history['method_specific'] = []
-		history['referee'] = []
-		history['_round'] = []
-		history['time'] = []
-		history['name'] = result['name']
-
+		
+		d3 = {}
+		d3['name'] = result['name']
+		d3['value'] = 100 #should be total career fight time in seconds TODO
+		d3['children'] = []
+		content = []
 		
 		for row in records:
 			cells = row.find_all('td')
-			win_loss = cells[0].get_text()
-			opponent = cells[1].get_text()
-			event = getEvent(cells[2].get_text())
-			date = getDate(cells[2].get_text()) #print event #need to work magic here to separate date
-			method_general = get_general_method(cells[3].get_text())
-			method_specific = get_specific_method(cells[3].get_text())
-			referee = get_ref(cells[3].get_text())
-			_round = cells[4].get_text()
-			time = cells[5].get_text()
 
-			history['win_loss'].append(win_loss)
-			history['opponent'].append(opponent)
-			history['event'].append(event)
-			history['date'].append(date) 
-			history['method_general'].append(method_general)
-			history['method_specific'].append(method_specific)
-			history['referee'].append(referee)
-			history['_round'].append(_round)
-			history['time'].append(time)
+			content = {
+
+				"opponent": cells[1].get_text(),
+				"win_loss": cells[0].get_text(),
+				"event": getEvent(cells[2].get_text()),
+				"date": getDate(cells[2].get_text()),
+				"method_general": get_general_method(cells[3].get_text()),
+				"method_specific": get_specific_method(cells[3].get_text()),
+				"referee": get_ref(cells[3].get_text()),
+				"_round": cells[4].get_text(),
+				"time": cells[5].get_text(),
+				"value": 25 #required for D3 graphing TODO: use time value in seconds
+			}
+
+			d3['children'].append(content)
+			
+		
+		print "D3 DATA (pre-cleanup):", d3
 
 
 		def clean_up(history):
-
-			for key, value in history.iteritems():
-				if key != "name":
-					value.pop(0)
-				else:
-					pass
-					#print key
-
-			#history = json.JSONEncoder().encode(history)
-			#print type(history['win_loss'])
-
-			#history['win_loss'] = [x.encode('UTF-8') for x in history['win_loss']]
-
-			#history['opponent'] = [x.encode('UTF-8') for x in history['opponent']]
-			#history['opponent'] = [json.dumps(x) for x in history['opponent']]
-
-			#history['event'] = [x.encode('UTF-8') for x in history['event']]
-			#history['date'] = [x.encode('UTF-8') for x in history['date']] # probably not appropriate for date
-			#history['method_general'] = [x.encode('UTF-8') for x in history['method_general']]
-			#history['method_specific'] = [x.encode('UTF-8') for x in history['method_specific']]
-			#history['referee'] = [x.encode('UTF-8') for x in history['referee']]
-			#history['_round'] = [x.encode('UTF-8') for x in history['_round']]
-			#history['time'] = [x.encode('UTF-8') for x in history['time']] 
-
-
-
-			"""
-			for item, value in history.iteritems():
-				if type(value) == list:
-					value = [x.encode('utf-8') for x in value] #apparently, this doesn't work during iteritems()
-					print value
-				elif type(item) != list:
-					pass
-				else:
-					print item
-
-			"""
+			#remove the first entry as these are just row titles
+			d3['children'].pop(0) 
+		
 			
-		clean_up(history)
+		clean_up(d3)
 
+		print "D3 DATA (POST-cleanup):", d3
 
-		#draw on data from result for now
-		#print result
-			
-		#print history
-
-		"""
-		TODO
-
-		<script type="text/javascript">
-			var data = JSON.parse("{{ result }}");
-			run_d3_stuff(data);
-		</script>
-
-		1) convert unicode
-		3) convert to json for D3 visualization
-		4) save info to the db
-		5) show info on the page
-		"""
-
-		return history
-
+		return d3
 	
 
 
