@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404, render
 from bs4 import BeautifulSoup
 import sherdog
 import json
+from datetime import datetime
 
 
 from .models import Fighter, SearchResult
@@ -73,12 +74,21 @@ def scraper(query_first_name, query_surname):
 def beautiful_soup(request, fighter):
 	
 
+	def json_serial(obj):
+		if isinstance (obj, datetime):
+			serial = obj.isoformat()
+        	return serial
+
 	if(fighter == "ronda"):
 		scraper = sherdog.Scraper("test")
-		history = scraper.scrape_fighter("Ronda-Rousey", 73073)
+		#history = scraper.scrape_fighter("Ronda-Rousey", 73073)
+		#history = scraper.scrape_fighter("Luke-Rockhold", 23345)
+		history = scraper.scrape_fighter("Lyoto-Machida", 7513)
+
+   		title_name = history['name']
 		json1 = json.dumps(history)
-		print json1 
-		context = {'history':json1}
+		#print json1 
+		context = {'history':json1, 'title_name':title_name}
 		#context = {'history':history}
 		return render(request, 'ufc/results.html', context)
 	else:
