@@ -5,6 +5,11 @@ from datetime import datetime
 import json
 
 from bs4 import BeautifulSoup
+from ufc.models import Fighter
+from ufc.models import Opponent
+
+from django.core import serializers
+from django.forms.models import model_to_dict
 
 """
 TODO:
@@ -12,8 +17,21 @@ TODO:
 1) create figher search function
 2) make bubbles "clickable"
 3) create fighter comparison function
+
+
+--KEY FOR MVP
+x) Fix scraping for different HTML layouts - make the search more flexible
 4) save top fighters to DB in case of HTML structure change
 5) attempt to save significant roster of fighters to DB - automated
+
+current problem is that the data being sent from the DB to the browser
+is not in the same form as when just directing the scraped json.
+
+Solution will involve changing DB data into the correct format
+
+--
+
+
 6) make bubbles zoomable?
 7) alternative visualizations
 
@@ -39,11 +57,79 @@ class Scraper(object):
 		fighter_id = str(fighter_id)
 		base_url = str(self.base_url)
 
+		clean_name = name.replace("-", " ")
+
+		#FIRST - check if this fighter is already in the DB
+		test_history = Fighter.objects.filter(fighter_name = clean_name)
+
+		# This is how to access the many-to-many data
+		for values in test_history:
+			for o in values.opponents.all():
+				print o.method_general
+
+
 		# fetch the required url and capture the fighter data
 		history = self.process_fighter('/fighter/%s-%s' % (name, fighter_id))
 
-		#print 'scrape fighter data', history
-		return history
+		# so at this point we've captured the data 
+		# let's save it to the DB
+		full_name = str(history['name']).split(' ')
+
+		fn = full_name[0]
+		sn = full_name[1]
+
+		a_fighter = Fighter(
+			fighter_name = history['name'],
+			first_name = fn,
+			surname_name = sn,
+			nationality = history['nationality'],
+			height_cm = float(history['height_cm']),
+			weight_kg = float(history['weight_kg']),
+			sherdog_id = 0, #TODO
+			wins = history['wins'],
+			losses = history['losses'],
+			draws = history['draws']
+			)
+
+		a_fighter.save()
+
+		# we have to create the opponents and save them before we can add them
+		
+		how_many = len(history['children'])
+		
+		all_opponents = []
+
+		for i in range(how_many):
+			o = Opponent(
+				opponent = history['children'][i]['opponent'],
+				win_loss = history['children'][i]['win_loss'],
+				_event = history['children'][i]['_event'],
+				#date = history['children'][i]['date'], TODO
+				method_general = history['children'][i]['method_general'],
+				method_specific = history['children'][i]['method_specific'],
+				referee = history['children'][i]['referee'],
+				_round = history['children'][i]['_round'],
+				#round_time = history['children'][i]['round_time'], TODO
+				total_time = history['children'][i]['total_time'],
+				value = history['children'][i]['value']
+				)
+			o.save()
+			a_fighter.opponents.add(o)
+			all_opponents.append(o)
+
+		
+		data = Fighter.objects.filter(fighter_name = clean_name)
+
+		for item in data:
+   			item['opponents'] = model_to_dict(item['opponents'])
+   			print item
+
+   		data2 = serializers.serialize('json', Fighter.objects.filter(fighter_name = clean_name))
+
+
+		#print data
+		#return history
+		return data2
 
 
 	def process_fighter(self, url):
@@ -59,9 +145,7 @@ class Scraper(object):
 		#print soup.body
 		fighter_name = soup.find_all("span", class_="fn")
 		fighter_namey = soup.find('h1', {'itemprop': 'name'}).span.contents[0]
-		print fighter_name
 
-		print fighter_namey
 
 
 		try:
@@ -215,9 +299,6 @@ class Scraper(object):
 				total_fight_time = 0
 
 
-				print "TIME:", the_time
-				#print type(the_time)
-
 				if the_round == 1:
 					total_fight_time = the_time
 				elif the_round == 2:
@@ -237,10 +318,20 @@ class Scraper(object):
 
 
 		records = {}
-		records = soup.findAll('table')[0].findAll('tr')
+		records = soup.findAll('table')[1].findAll('tr')
 		
 		d3 = {}
 		d3['name'] = result['name']
+		d3['birth_date'] = result['birth_date']
+		d3['locality'] = result['locality']
+		d3['nationality'] = result['nationality']
+		d3['height_cm'] = result['height_cm']
+		d3['weight_kg'] = result['weight_kg']
+		d3['wins'] = result['wins']
+		d3['losses'] = result['losses']
+		d3['draws'] = result['draws']
+
+
 		d3['value'] = 100 #should be total career fight time in seconds TODO
 		d3['total_fight_time'] = ""
 		d3['children'] = []
@@ -249,7 +340,7 @@ class Scraper(object):
 		for row in records:
 			cells = row.find_all('td')
 
-			print "HTML:", cells
+			
 
 			content = {
 
@@ -290,7 +381,6 @@ class Scraper(object):
 					if key == "total_time":
 						#print value
 						career_time += value
-			print "career_time:", career_time
 			d3['total_fight_time'] = career_time
 			d3['value'] = career_time
 

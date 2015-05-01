@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import sherdog
 import json
 from datetime import datetime
+from django.forms.models import model_to_dict
 
 
 from .models import Fighter, SearchResult
@@ -81,15 +82,19 @@ def beautiful_soup(request, fighter):
 
 	if(fighter == "ronda"):
 		scraper = sherdog.Scraper("test")
-		#history = scraper.scrape_fighter("Ronda-Rousey", 73073)
+		history = scraper.scrape_fighter("Ronda-Rousey", 73073)
 		#history = scraper.scrape_fighter("Luke-Rockhold", 23345)
-		history = scraper.scrape_fighter("Lyoto-Machida", 7513)
+		#history = scraper.scrape_fighter("Lyoto-Machida", 7513)
+		print history
+   		#title_name = history['name']
+   		#title_name = history['fighter_name']
 
-   		title_name = history['name']
+   		
+
 		json1 = json.dumps(history)
 		#print json1 
-		context = {'history':json1, 'title_name':title_name}
-		#context = {'history':history}
+		#context = {'history':json1, 'title_name':title_name}
+		context = {'history':json1}
 		return render(request, 'ufc/results.html', context)
 	else:
 		raise Http404
