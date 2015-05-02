@@ -1,0 +1,15 @@
+{% extends 'ufc/base.html' %}
+
+{% load staticfiles %}
+
+
+{% block body_text %}
+
+<ul>
+{% for value in links %}
+
+	<li><a href="{{ request.build_absolute_uri }}/ufc/soup/{{value.result_url}}/{{value.result_sherdog_id}}">{{value.result_name}}</a></li>
+
+{% endfor %}
+</ul>
+{% endblock %}

@@ -211,12 +211,20 @@ h2 {
   	border: rgba(0,0,0,0.05) 0.1em solid;
 }
 
+.fighter-frm .processing-search-button > input {
+    margin: 0;
+    padding: 0;
+    width: 0;
+    height: 0;
+    border: none;
+}
+
 .popular {
 	margin: 0 auto 5% auto;
 }
 
 .popular-links {
-	margin: 7% auto;
+	margin: 4% auto 7%;
 	padding: 0;
 }
 

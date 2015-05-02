@@ -5,7 +5,6 @@ urlpatterns = [
 	url(r'^$', views.index, name='index'),
 	url(r'^search/$', views.search),
 	url(r'^search/results/$', views.results),
-	url(r'^searches/all-searches/$', views.view_list),
-	url(r'^searches/new/$', views.new_search),
-	url(r'^soup/(?P<fighter>\w{0,50})/$', views.beautiful_soup),
+	url(r'^soup/(?P<fighter>[-\w]{0,50})/(?P<sherdog_id>[-\w]{0,50})/$', views.beautiful_soup, name='scrape'),
+	url(r'^fighter/query/$', views.hunt),
 ]

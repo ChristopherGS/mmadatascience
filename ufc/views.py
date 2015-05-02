@@ -8,6 +8,11 @@ import sherdog
 import json
 from datetime import datetime
 from django.forms.models import model_to_dict
+from django.views.decorators.csrf import csrf_exempt
+
+import urllib2
+import requests
+import html5lib
 
 
 from .models import Fighter, SearchResult
@@ -71,34 +76,126 @@ def search(request):
 def scraper(query_first_name, query_surname):
 	return "scraper starting for %s" % query_first_name
 
+@csrf_exempt
+def hunt(request):
 
-def beautiful_soup(request, fighter):
-	
+	if request.method == 'POST':
+		full_name = request.POST['surname'] +"+"+request.POST['firstName']
+		print "FULL NAME POST: ", full_name
+		
+		scraper = sherdog.Scraper("test")
+		SHERDOG_URL = 'http://www.sherdog.com/stats/fightfinder'
+		#http://www.sherdog.com/stats/fightfinder?SearchTxt=Aldo&weight=&association=
+		search = str(full_name)
+		search = search.strip(" ")
+		url = "?SearchTxt=%s&weight=&association=" % search
+
+		complete_url = str(SHERDOG_URL) + url
+		print "here is the search url: %s" % complete_url
+
+		source = urllib2.urlopen(complete_url).read()
+		soup = BeautifulSoup(source)
+
+		fightfinder_result = soup.find("table", { "class" : "fightfinder_result" })
+
+		deeper = fightfinder_result.find_all('tr')
+
+		#AIR PAIR QUESTION 2: clarify when to use "self" - presume not in these functions?
+
+		def extract_link(cell):
+			print "THE RAW: ", cell
+			anchors = cell.find_all('a')
+			try:
+				for a in anchors:
+					edited = a['href'].strip('/fighter/')
+					result = ''.join([i for i in edited if not i.isdigit()])
+					result = result.rstrip('-')
+					print "edited", result
+					return result
+			except:
+				print "NO!"
+				return "NA"
+
+		def extract_sherdog(cell):
+			print "THE RAW: ", cell
+			anchors = cell.find_all('a')
+			try:
+				for a in anchors:
+					test = str(a['href'])
+					edited = ''.join([i for i in test if i.isdigit()]) # the part to omit
+					print edited
+					return edited
+			except:
+				print "NO!"
+				return "NA"
+
+		def extract_image(cell):
+			print "THE RAW: ", cell
+			images = cell.find_all('img')
+			try:
+				for i in images:
+					return i['src']
+			except:
+				print "NO!"
+				return "NA"
+
+
+		search_results = {}
+		search_results['bunch'] = []
+
+		for row in deeper:
+			cells = row.find_all('td')
+			
+			try:
+				content = {
+					"result_name": cells[1].get_text(),
+					"result_url": extract_link(cells[1]),
+					"result_sherdog_id": extract_sherdog(cells[1]),
+					"result_image": extract_image(cells[0]),
+				}
+				
+			except Exception as e:
+				print "EXCEPTIoN", e
+				content = {}
+			finally:
+				search_results['bunch'].append(content)
+
+
+		#print "CONTENT", search_results
+
+	#json1 = json.dumps(search_results['bunch'])
+	context = {'links':search_results['bunch']}
+
+	print "YO", type(search_results['bunch'])
+
+	#AIRPAIR QUESTION 3: This seems crap - shouldn't I do a redirect here? AND why doesnt the context work easily
+	return render(request, 'ufc/search.html', context)
+		
+
+
+def beautiful_soup(request, fighter, sherdog_id):
+	print type(fighter)
+	print type(sherdog_id)
 
 	def json_serial(obj):
 		if isinstance (obj, datetime):
 			serial = obj.isoformat()
         	return serial
 
-	if(fighter == "ronda"):
-		scraper = sherdog.Scraper("test")
-		history = scraper.scrape_fighter("Ronda-Rousey", 73073)
-		#history = scraper.scrape_fighter("Luke-Rockhold", 23345)
-		#history = scraper.scrape_fighter("Lyoto-Machida", 7513)
-		print history
-   		#title_name = history['name']
-   		#title_name = history['fighter_name']
+	scraper = sherdog.Scraper("test")
 
-   		
-
-		json1 = json.dumps(history)
-		#json1 = history
-		#data2 = json.dumps(struct[0])
-		#print json1 
-		#context = {'history':json1, 'title_name':title_name}
-		context = {'history':json1}
-		return render(request, 'ufc/results.html', context)
-	else:
+	try:	
+		history = scraper.scrape_fighter(fighter, sherdog_id)
+	except Exception as e:
+		print e
 		raise Http404
+
+		
+   	title_name = history['fighter_name']
+	json1 = json.dumps(history) 
+	context = {'history':json1, 'title_name':title_name}
+	#context = {'history':json1}
+	return render(request, 'ufc/results.html', context)
+		
 
 	

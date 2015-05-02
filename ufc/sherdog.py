@@ -13,28 +13,29 @@ from django.forms.models import model_to_dict
 
 """
 TODO:
+**Big ticket**
 
-1) create figher search function
-2) make bubbles "clickable"
+1) create figher search function --> make links lead to bubble display
+2) make bubbles "clickable" / zoomable
 3) create fighter comparison function
 
 
---KEY FOR MVP
-x) Fix scraping for different HTML layouts - make the search more flexible
-4) save top fighters to DB in case of HTML structure change
-5) attempt to save significant roster of fighters to DB - automated
+--** KEY FOR MVP **
 
+- get all the data in order (fix NAs and time issues)
+- figure out which bubble looks best
+
+5) attempt to save significant roster of fighters to DB - automated
+6) ensure all data displays in graph
+7) get photos
 6) deploy by end of weekend
 
-current problem is that the data being sent from the DB to the browser
-is not in the same form as when just directing the scraped json.
+7) Fix responsive design
 
-Solution will involve changing DB data into the correct format
 
 --
 
-
-6) make bubbles zoomable?
+** Long term **
 7) alternative visualizations
 
 """
@@ -52,98 +53,117 @@ class Scraper(object):
 
 	def check_db_for_fighter(self, fighter_name):
 		if Fighter.objects.filter(fighter_name = fighter_name).exists():
-			return False
-		else:
 			return True
+		else:
+			return False
+
+	def load_from_db(self, fighter_name):
+		if self.check_db_for_fighter(fighter_name) == True:
+			#load from db
+			print "LOAD FROM DB"
+			obj = [{'fighter_name': b.fighter_name, 'sherdog_id': b.sherdog_id, 'value': b.value,
+			'children': [{'opponent': a.opponent, 'win_loss': a.win_loss, '_event': a._event, 
+			'date': a.date, 'method_general': a.method_general,
+			'method_specific': a.method_specific, 'referee': a.referee,
+			'_round': a._round, 'total_time': a.total_time, 'value': a.value } for a in b.children.all()]} for b in Fighter.objects.filter(fighter_name=fighter_name).prefetch_related('children')]
+			return obj[0]
+		else: 
+			return False
 
 	def scrape_fighter(self, name, fighter_id):
 
-		"""Retrieve and parse a fighter's details from sherdog.com"""
-		# make sure fighter_id is an int
 		name = str(name)
 		fighter_id = str(fighter_id)
 		base_url = str(self.base_url)
-
 		clean_name = name.replace("-", " ")
 
-		#FIRST - check if this fighter is already in the DB
-		test_history = Fighter.objects.filter(fighter_name = clean_name)
+		print "NAME", name
+		print "CLEAN_NAME", clean_name
 
-		# This is how to access the many-to-many data
-		for values in test_history:
-			for o in values.children.all():
-				print o.method_general
+		"""check if fighter is in the DB, if it is return the data"""
+		load_check = self.check_db_for_fighter(clean_name)
+		print "LOAD CHECK", load_check
 
+		if load_check == True:
+			data = self.load_from_db(clean_name)
+			return data
+		else:
+			"""Fighter not in DB, so retrieve and parse a fighter's details from sherdog.com"""
 
-		# fetch the required url and capture the fighter data
-		history = self.process_fighter('/fighter/%s-%s' % (name, fighter_id))
+			test_history = Fighter.objects.filter(fighter_name = clean_name)
 
-		# so at this point we've captured the data 
-		# let's save it to the DB IF it is new
-		if self.check_db_for_fighter(clean_name):
+			# This is how to access the many-to-many data
+			#for values in test_history:
+			#	for o in values.children.all():
+			#		pass
+			#		print o.method_general
 
-			full_name = str(history['name']).split(' ')
+			# fetch the required url and capture the fighter data
+			history = self.process_fighter('/fighter/%s-%s' % (name, fighter_id))
 
-			fn = full_name[0]
-			sn = full_name[1]
+			# At this point we've captured the data 
+			# let's save it to the DB IF it is new TODO: improve check
+			if self.check_db_for_fighter(clean_name) == False:
 
-			a_fighter = Fighter(
-				fighter_name = history['name'],
-				first_name = fn,
-				surname_name = sn,
-				nationality = history['nationality'],
-				height_cm = float(history['height_cm']),
-				weight_kg = float(history['weight_kg']),
-				sherdog_id = 0, #TODO
-				wins = history['wins'],
-				losses = history['losses'],
-				draws = history['draws']
-				)
+				full_name = str(history['fighter_name']).split(' ')
 
-			a_fighter.save()
+				fn = full_name[0]
+				sn = full_name[1]
 
-			# we have to create the opponents and save them before we can add them
-			
-			how_many = len(history['children'])
-			
-			all_opponents = []
-
-			for i in range(how_many):
-				o = Opponent(
-					opponent = history['children'][i]['opponent'],
-					win_loss = history['children'][i]['win_loss'],
-					_event = history['children'][i]['_event'],
-					#date = history['children'][i]['date'], TODO
-					method_general = history['children'][i]['method_general'],
-					method_specific = history['children'][i]['method_specific'],
-					referee = history['children'][i]['referee'],
-					_round = history['children'][i]['_round'],
-					#round_time = history['children'][i]['round_time'], TODO
-					total_time = history['children'][i]['total_time'],
-					value = history['children'][i]['value']
+				a_fighter = Fighter(
+					fighter_name = history['fighter_name'],
+					first_name = fn,
+					surname_name = sn,
+					nationality = history['nationality'],
+					height_cm = float(history['height_cm']),
+					weight_kg = float(history['weight_kg']),
+					sherdog_id = 0, #TODO
+					wins = history['wins'],
+					losses = history['losses'],
+					draws = history['draws']
 					)
-				o.save()
-				a_fighter.children.add(o)
-				all_opponents.append(o)
+
+				print "FIGHTER TO SAVE:", a_fighter
+
+				a_fighter.save()
+
+				# we have to create the opponents and save them before we can add them
+				
+				how_many = len(history['children'])
+				
+				all_opponents = []
+
+				for i in range(how_many):
+					o = Opponent(
+						opponent = history['children'][i]['opponent'],
+						win_loss = history['children'][i]['win_loss'],
+						_event = history['children'][i]['_event'],
+						#date = history['children'][i]['date'], TODO
+						method_general = history['children'][i]['method_general'],
+						method_specific = history['children'][i]['method_specific'],
+						referee = history['children'][i]['referee'],
+						_round = history['children'][i]['_round'],
+						#round_time = history['children'][i]['round_time'], TODO
+						total_time = history['children'][i]['total_time'],
+						value = history['children'][i]['value']
+						)
+					o.save()
+					a_fighter.children.add(o)
+					all_opponents.append(o)
 
 
 		obj = [{'fighter_name': b.fighter_name, 'sherdog_id': b.sherdog_id, 'value': b.value,
 		'children': [{'opponent': a.opponent, 'win_loss': a.win_loss, '_event': a._event, 
 		'date': a.date, 'method_general': a.method_general,
 		'method_specific': a.method_specific, 'referee': a.referee,
-		'_round': a._round, 'total_time': a.total_time, 'value': a.value } for a in b.children.all()]} for b in Fighter.objects.prefetch_related('children')]
+		'_round': a._round, 'total_time': a.total_time, 'value': a.value } for a in b.children.all()]} for b in Fighter.objects.filter(fighter_name=clean_name).prefetch_related('children')]
 
-		opponents = Fighter.objects.prefetch_related('children')
 
-		print "OBJ:", obj
 
-		"""
-		The best way to customize your serialization is to get Django to serialize to Python dicts first. 
-		Then you can post-process those dicts however you like, before dumping them out to JSON:
-		"""
+		print "DATA HAS BEEN SCRAPED"
 
-		#return history
-		return obj[0]
+		#return obj[0]
+		return history
 
 
 	def process_fighter(self, url):
@@ -156,11 +176,9 @@ class Scraper(object):
 		source = urllib2.urlopen(updated_url).read()
 		soup = BeautifulSoup(source)
 
-		#print soup.body
+		
 		fighter_name = soup.find_all("span", class_="fn")
 		fighter_namey = soup.find('h1', {'itemprop': 'name'}).span.contents[0]
-
-
 
 		try:
 			birth_date = soup.find('span', {'itemprop': 'birthDate'}).contents[0]
@@ -241,9 +259,12 @@ class Scraper(object):
 				else:
 					return eventString[:index]
 
+
+		# AIRPAIR 1 - surely there's a smarter way to do this?
+
 		def getDate(eventString):
 			dateStrings = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-			conflicts = ["Jungle"]
+			conflicts = ["Jungle", "Maynard", "Mayhem", "March"]
 
 			for x in conflicts:
 				edge_case = eventString.find(x)
@@ -261,8 +282,12 @@ class Scraper(object):
 					date_string = date_string.replace(" / ", "-")
 					date_string = date_string
 
-					actual_date = datetime.strptime(date_string, '%b-%d-%Y')
-					json_date = json.dumps(actual_date, default=json_serial)
+					try: 
+						actual_date = datetime.strptime(date_string, '%b-%d-%Y')
+						json_date = json.dumps(actual_date, default=json_serial)
+					except Exception as e:
+						print "ERROR", e
+						json_date = "NA"
 
 					return json_date
 
@@ -327,15 +352,55 @@ class Scraper(object):
 				return total_fight_time
 
 			except Exception as e:
-				print "Exception:", e
+				print "Exception motherfucker!:", e
+				print "time", time, type(time)
+				print "round", tround, type(tround)
+				pass
 
 
 
 		records = {}
-		records = soup.findAll('table')[1].findAll('tr')
+		"""
+		1 = Ronda OK, 0 = Lyoto OK
+		This is because there is an upcoming event for Ronda
+		We must make sure the table is correct.
+		It should have this initial HTML:
+		<table border="1">
+			<tr class="table_head">
+	            <td class="col_one">Result</td>
+	            <td  class="col_two">Fighter</td>
+	            <td  class="col_three">Event</td>
+	            <td  class="col_four">Method/Referee</td>
+	            <td  class="col_five">R</td>
+	            <td  class="col_six">Time</td>
+	        </tr>
+	    """
+
+		#NEED TO FIND CORRECT TABLE
+		def get_table_number(soup):
+			correct_table = 0 # sensible default
+			for i in range(5):
+				print i
+				find_right_table = soup.findAll('table')[i].findAll('tr')
+				for row in find_right_table:
+					cells = row.find_all('td')
+					try:
+						if cells[0].get_text() == "Result" and cells[1].get_text() == "Fighter" and cells[3].get_text() == "Method/Referee":
+							correct_table = i
+							print "The correct table number is: ", correct_table 
+							return correct_table
+					except Exception as e:
+						print e
+						print "incorrect table"
+					finally:
+						i = i + 1
+
+
+		table_number = get_table_number(soup)
+		records = soup.findAll('table')[table_number].findAll('tr')
 		
 		d3 = {}
-		d3['name'] = result['name']
+		d3['fighter_name'] = result['name']
 		d3['birth_date'] = result['birth_date']
 		d3['locality'] = result['locality']
 		d3['nationality'] = result['nationality']
@@ -394,7 +459,10 @@ class Scraper(object):
 				for key, value in duration.iteritems():
 					if key == "total_time":
 						#print value
-						career_time += value
+						try:
+							career_time += value
+						except:
+							pass
 			d3['total_fight_time'] = career_time
 			d3['value'] = career_time
 

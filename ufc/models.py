@@ -13,15 +13,15 @@ class Opponent(models.Model):
 
 	#date = models.DateField('date', default=datetime.now)
 	date = models.CharField(max_length=200, default="na")
-	method_general = models.CharField(max_length=200, default="na")
-	method_specific = models.CharField(max_length=200, default="na")
-	referee = models.CharField(max_length=200, default="na")
+	method_general = models.CharField(max_length=200, default="na", null=True)
+	method_specific = models.CharField(max_length=200, default="na", null=True)
+	referee = models.CharField(max_length=200, default="na", null=True)
 	_round = models.IntegerField(default=0)
 
 	#round_time = birth_date = models.TimeField(default=00)
-	total_time = models.IntegerField(default=0)
+	total_time = models.IntegerField(default=0, null=True)
 	
-	value = models.IntegerField(default=10)
+	value = models.IntegerField(default=10, null=True)
 
 	def __unicode__(self): # __str__ on Python 3
 		return self.opponent

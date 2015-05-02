@@ -20,7 +20,7 @@
 		<div class="row">
 
 
-			<form action="/" method="POST" class="fighter-frm clearfix text-center">
+			<form action="ufc/fighter/query/" method="POST" class="fighter-frm clearfix text-center">
 				{% csrf_token %}
 
 				<fieldset>
@@ -34,7 +34,7 @@
 
 				</fieldset>
 
-				<button class="processing-search-button">Get Visuals</button>
+				<button class="processing-search-button">Get Visuals<input id="the_submit" type="submit" class="input-mini"></button>
 
 			</form>
 
@@ -48,16 +48,16 @@
 			<h2 class="text-center">Popular Searches</h2>
 
 			<ul class="popular-links text-center">
-				<li><a href="ufc/soup/ronda">Ronda Rousey</a></li>
-				<li><a href="ufc/soup/ronda">Lyoto Machida</a></li>
-				<li><a href="ufc/soup/ronda">Luke Rockhold</a></li>
-				<li><a href="ufc/soup/ronda">Ronda Rousey</a></li>
-				<li><a href="ufc/soup/ronda">Ronda Rousey</a></li>
-				<li><a href="ufc/soup/ronda">Ronda Rousey</a></li>	
-				<li><a href="ufc/soup/ronda">Ronda Rousey</a></li>
-				<li><a href="ufc/soup/ronda">Ronda Rousey</a></li>
-				<li><a href="ufc/soup/ronda">Ronda Rousey</a></li>
-				<li><a href="ufc/soup/ronda">Ronda Rousey</a></li>
+				<li><a href="ufc/soup/Ronda-Rousey/73073">Ronda Rousey</a></li>
+				<li><a href="ufc/soup/Chris-Weidman/42804">Chris Weidman</a></li>
+				<li><a href="ufc/soup/Cain-Velasquez/19102">Cain Velasquez</a></li>
+				<li><a href="ufc/soup/Jose-Aldo/11506">Jose Aldo</a></li>	
+				<li><a href="ufc/soup/Robbie-Lawler/2245">Robbie Lawler</a></li>
+				<li><a href="ufc/soup/Rafael-dos-Anjos/11675">Rafael dos Anjos</a></li>
+				<li><a href="ufc/soup/TJ-Dillashaw/62507">TJ Dillashaw</a></li>
+				<li><a href="ufc/soup/Demtrious-Johnson/45452">Demetrious Johnson</a></li>
+				<li><a href="ufc/soup/Lyoto-Machida/7513">Lyoto Machida</a></li>
+				<li><a href="ufc/soup/Luke-Rockhold/23345">Luke Rockhold</a></li>
 			</ul>
 		
 
