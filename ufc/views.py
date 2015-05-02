@@ -92,6 +92,8 @@ def beautiful_soup(request, fighter):
    		
 
 		json1 = json.dumps(history)
+		#json1 = history
+		#data2 = json.dumps(struct[0])
 		#print json1 
 		#context = {'history':json1, 'title_name':title_name}
 		context = {'history':json1}

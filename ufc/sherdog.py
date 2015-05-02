@@ -24,6 +24,8 @@ x) Fix scraping for different HTML layouts - make the search more flexible
 4) save top fighters to DB in case of HTML structure change
 5) attempt to save significant roster of fighters to DB - automated
 
+6) deploy by end of weekend
+
 current problem is that the data being sent from the DB to the browser
 is not in the same form as when just directing the scraped json.
 
@@ -48,6 +50,11 @@ class Scraper(object):
 		self.arg = arg
 		self.base_url = SHERDOG_URL
 
+	def check_db_for_fighter(self, fighter_name):
+		if Fighter.objects.filter(fighter_name = fighter_name).exists():
+			return False
+		else:
+			return True
 
 	def scrape_fighter(self, name, fighter_id):
 
@@ -64,7 +71,7 @@ class Scraper(object):
 
 		# This is how to access the many-to-many data
 		for values in test_history:
-			for o in values.opponents.all():
+			for o in values.children.all():
 				print o.method_general
 
 
@@ -72,64 +79,71 @@ class Scraper(object):
 		history = self.process_fighter('/fighter/%s-%s' % (name, fighter_id))
 
 		# so at this point we've captured the data 
-		# let's save it to the DB
-		full_name = str(history['name']).split(' ')
+		# let's save it to the DB IF it is new
+		if self.check_db_for_fighter(clean_name):
 
-		fn = full_name[0]
-		sn = full_name[1]
+			full_name = str(history['name']).split(' ')
 
-		a_fighter = Fighter(
-			fighter_name = history['name'],
-			first_name = fn,
-			surname_name = sn,
-			nationality = history['nationality'],
-			height_cm = float(history['height_cm']),
-			weight_kg = float(history['weight_kg']),
-			sherdog_id = 0, #TODO
-			wins = history['wins'],
-			losses = history['losses'],
-			draws = history['draws']
-			)
+			fn = full_name[0]
+			sn = full_name[1]
 
-		a_fighter.save()
-
-		# we have to create the opponents and save them before we can add them
-		
-		how_many = len(history['children'])
-		
-		all_opponents = []
-
-		for i in range(how_many):
-			o = Opponent(
-				opponent = history['children'][i]['opponent'],
-				win_loss = history['children'][i]['win_loss'],
-				_event = history['children'][i]['_event'],
-				#date = history['children'][i]['date'], TODO
-				method_general = history['children'][i]['method_general'],
-				method_specific = history['children'][i]['method_specific'],
-				referee = history['children'][i]['referee'],
-				_round = history['children'][i]['_round'],
-				#round_time = history['children'][i]['round_time'], TODO
-				total_time = history['children'][i]['total_time'],
-				value = history['children'][i]['value']
+			a_fighter = Fighter(
+				fighter_name = history['name'],
+				first_name = fn,
+				surname_name = sn,
+				nationality = history['nationality'],
+				height_cm = float(history['height_cm']),
+				weight_kg = float(history['weight_kg']),
+				sherdog_id = 0, #TODO
+				wins = history['wins'],
+				losses = history['losses'],
+				draws = history['draws']
 				)
-			o.save()
-			a_fighter.opponents.add(o)
-			all_opponents.append(o)
 
-		
-		data = Fighter.objects.filter(fighter_name = clean_name)
+			a_fighter.save()
 
-		for item in data:
-   			item['opponents'] = model_to_dict(item['opponents'])
-   			print item
+			# we have to create the opponents and save them before we can add them
+			
+			how_many = len(history['children'])
+			
+			all_opponents = []
 
-   		data2 = serializers.serialize('json', Fighter.objects.filter(fighter_name = clean_name))
+			for i in range(how_many):
+				o = Opponent(
+					opponent = history['children'][i]['opponent'],
+					win_loss = history['children'][i]['win_loss'],
+					_event = history['children'][i]['_event'],
+					#date = history['children'][i]['date'], TODO
+					method_general = history['children'][i]['method_general'],
+					method_specific = history['children'][i]['method_specific'],
+					referee = history['children'][i]['referee'],
+					_round = history['children'][i]['_round'],
+					#round_time = history['children'][i]['round_time'], TODO
+					total_time = history['children'][i]['total_time'],
+					value = history['children'][i]['value']
+					)
+				o.save()
+				a_fighter.children.add(o)
+				all_opponents.append(o)
 
 
-		#print data
+		obj = [{'fighter_name': b.fighter_name, 'sherdog_id': b.sherdog_id, 'value': b.value,
+		'children': [{'opponent': a.opponent, 'win_loss': a.win_loss, '_event': a._event, 
+		'date': a.date, 'method_general': a.method_general,
+		'method_specific': a.method_specific, 'referee': a.referee,
+		'_round': a._round, 'total_time': a.total_time, 'value': a.value } for a in b.children.all()]} for b in Fighter.objects.prefetch_related('children')]
+
+		opponents = Fighter.objects.prefetch_related('children')
+
+		print "OBJ:", obj
+
+		"""
+		The best way to customize your serialization is to get Django to serialize to Python dicts first. 
+		Then you can post-process those dicts however you like, before dumping them out to JSON:
+		"""
+
 		#return history
-		return data2
+		return obj[0]
 
 
 	def process_fighter(self, url):

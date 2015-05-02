@@ -11,8 +11,8 @@ class Opponent(models.Model):
 	win_loss = models.CharField(max_length=200, default="na")
 	_event = models.CharField(max_length=200, default="na")
 
-	date = models.DateField('date', default=datetime.now)
-
+	#date = models.DateField('date', default=datetime.now)
+	date = models.CharField(max_length=200, default="na")
 	method_general = models.CharField(max_length=200, default="na")
 	method_specific = models.CharField(max_length=200, default="na")
 	referee = models.CharField(max_length=200, default="na")
@@ -21,7 +21,7 @@ class Opponent(models.Model):
 	#round_time = birth_date = models.TimeField(default=00)
 	total_time = models.IntegerField(default=0)
 	
-	value = models.IntegerField(default=0)
+	value = models.IntegerField(default=10)
 
 	def __unicode__(self): # __str__ on Python 3
 		return self.opponent
@@ -29,7 +29,7 @@ class Opponent(models.Model):
 
 class Fighter(models.Model):
 	
-	fighter_name = models.CharField(max_length=200, default="na", unique=True)
+	fighter_name = models.CharField(max_length=200, default="na")
 	first_name = models.CharField(max_length=200, default="na")
 	surname_name = models.CharField(max_length=200, default="na")
 
@@ -41,8 +41,10 @@ class Fighter(models.Model):
 	wins = models.IntegerField(default=0)
 	losses = models.IntegerField(default=0)
 	draws = models.IntegerField(default=0)
+	value = models.IntegerField(default=100)
 
-	opponents = models.ManyToManyField(Opponent)
+	#we call this field "children" to reduce d3.js conversion on the front end
+	children = models.ManyToManyField(Opponent)
 	
 
 	def __unicode__(self): # __str__ on Python 3
