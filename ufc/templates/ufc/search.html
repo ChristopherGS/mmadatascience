@@ -3,12 +3,47 @@
 {% load staticfiles %}
 
 
+{% block header_text %}
+	<header id="global-header">
+		<nav role="navigation">
+			<div class="wrapper">
+				<a class="logo" href="https://digitalgrappling.com"><span>Digital Grappling></span></a>
+				<ul class="main-menu">
+					<li class="button-container">
+						<a class="login" href="https://digitalgrappling.com">About</a>
+					</li>
+					<li class="button-container">
+						<a class="login" href="/">Home</a>
+					</li>
+				</ul>
+
+			</div>
+
+		</nav>
+	</header>
+
+	<div class="clearfix"></div>
+
+{% endblock %}
+
+
+
 {% block body_text %}
 
-<ul>
+<h3 class="text-center">Fighter Search Results</h3>
+
+
+{% if error %}
+<h4 class="no-results text-center">{{error}}</h4>
+<button id="results_page" class="processing-search-button text-center"><a href="/">Search Again</a></button>
+{% endif %}
+
+
+
+<ul id="search-results" class="text-center">
 {% for value in links %}
 
-	<li><a href="{{ request.build_absolute_uri }}/ufc/soup/{{value.result_url}}/{{value.result_sherdog_id}}">{{value.result_name}}</a></li>
+	<li class="search-item"><a href="{{ request.build_absolute_uri }}/ufc/soup/{{value.result_url}}/{{value.result_sherdog_id}}">{{value.result_name}}</a></li>
 
 {% endfor %}
 </ul>

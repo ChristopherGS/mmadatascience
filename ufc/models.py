@@ -21,7 +21,14 @@ class Opponent(models.Model):
 	#round_time = birth_date = models.TimeField(default=00)
 	total_time = models.IntegerField(default=0, null=True)
 	
+	#for D3.js
 	value = models.IntegerField(default=10, null=True)
+
+	#for scraping
+
+	sherdog_id = models.IntegerField(default=0, null=True)
+	o_url = models.CharField(max_length=200, default="na", null=True)
+	image_url = models.CharField(max_length=200, default="na", null=True)
 
 	def __unicode__(self): # __str__ on Python 3
 		return self.opponent
@@ -29,19 +36,24 @@ class Opponent(models.Model):
 
 class Fighter(models.Model):
 	
-	fighter_name = models.CharField(max_length=200, default="na")
-	first_name = models.CharField(max_length=200, default="na")
-	surname_name = models.CharField(max_length=200, default="na")
+	fighter_name = models.CharField(max_length=200, default="na", null=True)
+	first_name = models.CharField(max_length=200, default="na", null=True)
+	surname_name = models.CharField(max_length=200, default="na", null=True)
+	birth_date = models.DateField('birthdate', default=datetime.now, null=True)
+	nationality = models.CharField(max_length=200, default="na", null=True)
+	height_cm = models.IntegerField(default=0, null=True)
+	weight_kg = models.IntegerField(default=0, null=True)
+	wins = models.IntegerField(default=0, null=True)
+	losses = models.IntegerField(default=0, null=True)
+	draws = models.IntegerField(default=0, null=True)
 
-	birth_date = models.DateField('birthdate', default=datetime.now)
-	nationality = models.CharField(max_length=200, default="na")
-	height_cm = models.IntegerField(default=0)
-	weight_kg = models.IntegerField(default=0)
-	sherdog_id = models.IntegerField(default=0)
-	wins = models.IntegerField(default=0)
-	losses = models.IntegerField(default=0)
-	draws = models.IntegerField(default=0)
-	value = models.IntegerField(default=100)
+	#for D3.js
+	value = models.IntegerField(default=100, null=True)
+
+	#for scraping
+	sherdog_id = models.IntegerField(default=0, null=True)
+	f_url = models.CharField(max_length=200, default="na", null=True)
+	image_url = models.CharField(max_length=200, default="na", null=True)
 
 	#we call this field "children" to reduce d3.js conversion on the front end
 	children = models.ManyToManyField(Opponent)

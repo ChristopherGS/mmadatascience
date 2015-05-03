@@ -33,45 +33,19 @@
 
 <h2 class="text-center">Fight history for {{title_name}}</h2>
 
+
 {% endblock %}
 
 
 {% block d3 %}
 
- 
+<div class="row">
 
-<!--
-	<tr>
-		<td>Result</td>
-		<td>Opponent</td>
-		<td>Event</td>
-		<td>Date</td>
-		<td>Method</td>
-		<td>Round</td>
-		<td>Time</td>
-		<td>Referee</td>
-	</tr>
--->
+	<div id="fighterImageContainer" class="col-lg-3">
+		<span class="helper"></span><img id="fighterImage" src="{{image_url}}" alt="Image unavailable"/>
+	</div>
 
-<table border=0>
-<thead>
-    <tr>
-    {% for attr_head in history.keys %}
-       <th>{{ attr_head }}</th>
-    {% endfor %}
-    </tr>
-</thead>
-<tbody>
-    <tr>
-    {% for attr in history.values %}
-        <td>{{ attr }}</td>
-    {% endfor %}
-    </tr>
-</tbody>
-</table>
-
-
-
+	<div id="d3-container" class="col-lg-8"></div>
 
 <script type="text/javascript">
 	
@@ -122,10 +96,10 @@ function colorPicker(method_general) {
 
 //D3 setup
 
-var width = 900;
-var height = 700;
+var width = 600;
+var height = 600;
 
-var canvas = d3.select(".container").append("svg")
+var canvas = d3.select("#d3-container").append("svg")
 	.attr("width", width)
 	.attr("height", height)
 	.append("g")
@@ -161,9 +135,21 @@ var node = canvas.selectAll(".node")
 		.text(function(d) { return d.children ? d.name : "" })
 		.attr("display", "none")
 
+	/*var imgs = node.selectAll("image").data([0]);
+		imgs.enter()
+		.append("svg:image")
+		.attr("xlink:href", function(d) { return d.image_url })
+		.attr("x", "60")
+		.attr("y", "60")
+		.attr("width", "20")
+		.attr("height", "20")
+		.attr("display", (function(d) { return d.children ? "block" : "none" }));
+		*/
+
 	//append the circles to each node - each circle represents a fight from the record
 	node.append("circle")
 		.attr("rInit", function(d, i) { return d.r })
+		.attr("o_url", function(d, i) { return d.o_url})
 		.attr("r", function(d) { return d.r; })
 		.attr("id", function(d, i) { return "c" + i; })
 		//.attr("fill", "crimson")
@@ -192,17 +178,39 @@ var node = canvas.selectAll(".node")
 		      selectedCircle.transition()
 		      .attr("r", selectedCircle.attr("rInit") );
 		})
-/*
-	node.selectAll("image").data([0]);
-                imgs.enter()
-                .append("svg:image")
-                .attr("xlink:href", "http://www1.cdn.sherdog.com/image_crop/200/300/_images/fighter/20131219091702_ronda_rousey.JPG")
-                .attr("x", "60")
-                .attr("y", "60")
-                .attr("width", "20")
-                .attr("height", "20");
+		.on('click', function(d, i){
+			$('body').addClass('loading');
+			var selectedCircle = d3.select("#c" + i)
+			//alert(selectedCircle.attr("o_url"));
 
-*/
+			url = selectedCircle.attr("o_url");
+			fighter_name = selectedCircle.attr("o_url").replace(/[0-9]/g, '');
+			fighter_name = fighter_name.split('http://www.sherdog.com/fighter/').join('');
+			fighter_name = fighter_name.slice(0, - 1); 
+			console.log(fighter_name);
+
+			var sherdog_id = url.replace( /^\D+/g, '');
+			console.log(sherdog_id)
+			window.location.replace("/ufc/soup/"+fighter_name+"/"+sherdog_id)
+
+
+
+		//	formData = {"o_url": selectedCircle.attr("o_url")}
+		//	$.ajax({
+		//		url: '/ufc/organize/',
+		//		data: formData,
+		//		method: 'POST',
+		//		type: 'JSON',
+		//		success: function(response){
+		//			console.log(response)
+		//		}
+		//	}).done(function(data){
+		//		console.log("ajax done");
+		//	}).fail(function(error){
+		//		console.log("error: "+error.error)
+		//	})
+		//
+		});
 
     canvas.call(tip);
     canvas.call(tip2);
@@ -242,6 +250,6 @@ var node = canvas.selectAll(".node")
 
 </script>
 
-
+</div>
 
 {% endblock %}

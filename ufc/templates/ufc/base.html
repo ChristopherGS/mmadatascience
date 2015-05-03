@@ -7,24 +7,6 @@
 <link rel="stylesheet" type="text/css" href="{% static 'ufc/css/bootstrap.css' %}" />
 <link rel="stylesheet" type="text/css" href="{% static 'ufc/css/base.css' %}" />
 
-	<style>
-
-		path { 
-			stroke: stellblue;
-			stroke-width: 2;
-			fill: none;
-		}
-
-		.axis path, .axis line {
-			fill: none;
-			stroke: grey;
-			stroke-width: 1;
-			shape-rendering: crispEdges;
-		}
-	</style>
-
-
-
 </head>
 
 <body>
@@ -66,7 +48,9 @@
 <script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
 <script type="text/javascript" src="{% static 'ufc/js/ufc.js' %}"></script>
 
-{% block d3 %}{% endblock %}
+{% block d3 %}
+
+{% endblock %}
 
 {% block footer_text %}
 
@@ -96,4 +80,5 @@
 
 {% endblock %}
 
+<div class="modal2"><!-- Place at bottom of page --></div>
 </body>

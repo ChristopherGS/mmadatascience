@@ -178,7 +178,7 @@ h2 {
   	text-align: start;
 }
 
-.fighter-frm .processing-search-button {
+.fighter-frm .processing-search-button, .processing-search-button {
 	width: 135px;
 	height: 40px;
 	margin: 0;
@@ -209,6 +209,21 @@ h2 {
   	text-shadow: none;
   	border-radius: 0.3rem;
   	border: rgba(0,0,0,0.05) 0.1em solid;
+}
+
+#results_page{
+	margin: 4% auto;
+	display: block;
+
+}
+
+#results_page a {
+	color: #ffffff;
+	text-decoration: none;
+}
+
+#results_page a:hover{
+	text-decoration: none;	
 }
 
 .fighter-frm .processing-search-button > input {
@@ -274,8 +289,55 @@ h2 {
 }
 
 
+/*=============================
+Search Results page
+===============================*/
+
+#search-results {
+	margin: 3% auto 5%;
+	list-style-type: none;
+	padding: 0;
+}
+
+.search-item {
+	list-style-type: none;
+	text-align: center;
+	font-size: 1.4em;
+	padding: 1% 0;
+}
+
+.no-results {
+	margin-top: 3%;
+}
 
 
+
+/*=============================
+D3 page
+===============================*/
+
+#fighterImage{
+	/*display: inline-block;*/
+	vertical-align: middle;
+	margin-top: 5%;
+	height: 300px;
+	width: 200px;
+}
+
+.helper {
+    display: inline-block;
+    height: 100%;
+    vertical-align: middle;
+}
+
+#fighterImageContainer {
+	height: 600px;
+	display: block;
+}
+
+#d3-container {
+
+}
 
 /*=============================
 D3 STYLES
@@ -317,5 +379,38 @@ D3 STYLES
 svg {
 
 	display: block;
-	margin: 0 auto 20px auto;
+	margin: 5% auto 5% auto;
+}
+
+
+/*=============================
+LOADING MODAL STYLES
+===============================*/
+
+
+.modal2 {
+    display:    none;
+    position:   fixed;
+    z-index:    499;
+    top:        0;
+    left:       0;
+    height:     100%;
+    width:      100%;
+    background: rgba( 255, 255, 255, 0.8 )
+				url("../ajax-loader.gif")
+                50% 50% 
+                no-repeat;
+}
+
+
+/* When the body has the loading class, we turn
+   the scrollbar off with overflow:hidden */
+body.loading {
+    overflow: hidden;   
+}
+
+/* Anytime the body has the loading class, our
+   modal element will be visible */
+body.loading .modal2 {
+    display: block;
 }

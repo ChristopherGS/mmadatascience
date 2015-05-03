@@ -10,6 +10,8 @@ from datetime import datetime
 from django.forms.models import model_to_dict
 from django.views.decorators.csrf import csrf_exempt
 
+from django.http import JsonResponse
+
 import urllib2
 import requests
 import html5lib
@@ -19,62 +21,41 @@ from .models import Fighter, SearchResult
 
 
 def index(request):
-	if request.method == 'POST':
-		full_name = request.POST['firstName'] +" "+request.POST['surname']
-		Fighter.objects.create(fighter_name=full_name)
-		
-		return redirect('/searches/all-searches')
-
 	fighter_list = Fighter.objects.all()
 	context = {'fighter_list':fighter_list}
-	#beautiful_soup()
 	return render(request, 'ufc/index.html', context)
 
-
-def results(request):
-	if request.method == 'POST':
-		full_name = request.POST['firstName'] +" "+request.POST['surname']
-		Fighter.objects.create(fighter_name=full_name)
-		context = {'fighter_name':full_name}
-
-		return redirect('/')
-
-	fighter_list = Fighter.objects.all()
-	context = {'fighter_list':fighter_list}
-	#beautiful_soup()
-	return render(request, 'ufc/index.html', context)
 
 def view_list(request):
-	#fighter_list = Fighter.objects.all()
-	#context = {'fighter_list':fighter_list}
-	#beautiful_soup()
 	return render(request, 'ufc/results.html')
 		
 
-def new_search(request):
-	if request.method == 'POST':
-		print "new_search method"
-		full_name = request.POST['firstName'] +" "+request.POST['surname']
-		name = Fighter.objects.create(fighter_name=full_name)
-		name.save()
-		context = {'fighter_name':name}
-
-		return redirect('/soup/')
-
-def search(request):
-	print "search"
-	print request.body
-	try:
-		# should trigger the scraper
-		SearchResult(search_data = request.POST['surname']).save()
-	except e:
-		raise Http404
-
-	finally:
-		return HttpResponseRedirect('results')
-
 def scraper(query_first_name, query_surname):
 	return "scraper starting for %s" % query_first_name
+
+
+
+# AIRPAIR QUESTION 4: How can I easily "pass stuff around" like I tried to do here?
+# Ended up doing all the url wrangling on the client
+@csrf_exempt
+def organize(request):
+	if request.method == 'POST':
+		whole_url = str(request.POST['o_url'])
+		print "FULL URL: ", whole_url
+		try:
+			edited = whole_url.strip('http://www.sherdog.com/fighter/')
+			sherdog_id = str(''.join([i for i in edited if i.isdigit()]))
+			fighter_name = str(''.join([i for i in edited if not i.isdigit()]))
+		except Exception as e:
+			print e
+
+		print fighter_name[0]
+		print sherdog_id
+		info = {'fighter_name': fighter_name, 'sherdog_id': sherdog_id}
+		json = json.dumps(info)
+		#return redirect('/ufc/soup/%s/%s' % (fighter_name, sherdog_id))
+		return JsonResponse(info)
+
 
 @csrf_exempt
 def hunt(request):
@@ -98,12 +79,18 @@ def hunt(request):
 
 		fightfinder_result = soup.find("table", { "class" : "fightfinder_result" })
 
-		deeper = fightfinder_result.find_all('tr')
+		#MANAGE THE EVENT OF NOT FINDING ANYTHING
+		try: 
+			deeper = fightfinder_result.find_all('tr')
+		except Exception as e:
+			print "NO SEARCH RESULtS", e
+			context = {'error':'No search results found'}
+			return render(request, 'ufc/search.html', context)
+
 
 		#AIR PAIR QUESTION 2: clarify when to use "self" - presume not in these functions?
 
 		def extract_link(cell):
-			print "THE RAW: ", cell
 			anchors = cell.find_all('a')
 			try:
 				for a in anchors:
@@ -117,7 +104,6 @@ def hunt(request):
 				return "NA"
 
 		def extract_sherdog(cell):
-			print "THE RAW: ", cell
 			anchors = cell.find_all('a')
 			try:
 				for a in anchors:
@@ -130,7 +116,6 @@ def hunt(request):
 				return "NA"
 
 		def extract_image(cell):
-			print "THE RAW: ", cell
 			images = cell.find_all('img')
 			try:
 				for i in images:
@@ -161,12 +146,10 @@ def hunt(request):
 				search_results['bunch'].append(content)
 
 
-		#print "CONTENT", search_results
+	#del the first result as that is the table headings
+	del search_results['bunch'][0]
 
-	#json1 = json.dumps(search_results['bunch'])
 	context = {'links':search_results['bunch']}
-
-	print "YO", type(search_results['bunch'])
 
 	#AIRPAIR QUESTION 3: This seems crap - shouldn't I do a redirect here? AND why doesnt the context work easily
 	return render(request, 'ufc/search.html', context)
@@ -190,10 +173,11 @@ def beautiful_soup(request, fighter, sherdog_id):
 		print e
 		raise Http404
 
-		
+	print history
    	title_name = history['fighter_name']
+   	image_url = history['image_url']
 	json1 = json.dumps(history) 
-	context = {'history':json1, 'title_name':title_name}
+	context = {'history':json1, 'title_name':title_name, 'image_url': image_url}
 	#context = {'history':json1}
 	return render(request, 'ufc/results.html', context)
 		

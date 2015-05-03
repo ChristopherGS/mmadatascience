@@ -15,23 +15,18 @@ from django.forms.models import model_to_dict
 TODO:
 **Big ticket**
 
-1) create figher search function --> make links lead to bubble display
-2) make bubbles "clickable" / zoomable
-3) create fighter comparison function
-
+1) create fighter comparison function
+2) attempt to save significant roster of fighters to DB - automated / figure out update schedule
 
 --** KEY FOR MVP **
 
 - get all the data in order (fix NAs and time issues)
 - figure out which bubble looks best
+- add stats
 
-5) attempt to save significant roster of fighters to DB - automated
-6) ensure all data displays in graph
-7) get photos
 6) deploy by end of weekend
 
 7) Fix responsive design
-
 
 --
 
@@ -43,6 +38,7 @@ TODO:
 
 
 SHERDOG_URL = 'http://www.sherdog.com'
+FIGHTER_URL = 'http://www.sherdog.com/stats/fightfinder'
 
 class Scraper(object):
 	"""docstring for Sherdog"""
@@ -50,6 +46,7 @@ class Scraper(object):
 		super(Scraper, self).__init__()
 		self.arg = arg
 		self.base_url = SHERDOG_URL
+		self.fighter_url = FIGHTER_URL
 
 	def check_db_for_fighter(self, fighter_name):
 		if Fighter.objects.filter(fighter_name = fighter_name).exists():
@@ -62,18 +59,21 @@ class Scraper(object):
 			#load from db
 			print "LOAD FROM DB"
 			obj = [{'fighter_name': b.fighter_name, 'sherdog_id': b.sherdog_id, 'value': b.value,
+			'image_url': b.image_url, 'f_url': b.f_url, 'wins': b.wins, 'losses': b.losses, 'draws': b.draws,
+			'weight_kg': b.weight_kg, 'nationality': b.nationality,
 			'children': [{'opponent': a.opponent, 'win_loss': a.win_loss, '_event': a._event, 
 			'date': a.date, 'method_general': a.method_general,
 			'method_specific': a.method_specific, 'referee': a.referee,
+			'o_url': a.o_url, 'sherdog_id': a.sherdog_id,
 			'_round': a._round, 'total_time': a.total_time, 'value': a.value } for a in b.children.all()]} for b in Fighter.objects.filter(fighter_name=fighter_name).prefetch_related('children')]
 			return obj[0]
 		else: 
 			return False
 
-	def scrape_fighter(self, name, fighter_id):
+	def scrape_fighter(self, name, sherdog_id):
 
 		name = str(name)
-		fighter_id = str(fighter_id)
+		fighter_id = str(sherdog_id)
 		base_url = str(self.base_url)
 		clean_name = name.replace("-", " ")
 
@@ -99,7 +99,7 @@ class Scraper(object):
 			#		print o.method_general
 
 			# fetch the required url and capture the fighter data
-			history = self.process_fighter('/fighter/%s-%s' % (name, fighter_id))
+			history = self.process_fighter('/fighter/%s-%s' % (name, sherdog_id), sherdog_id)
 
 			# At this point we've captured the data 
 			# let's save it to the DB IF it is new TODO: improve check
@@ -117,10 +117,12 @@ class Scraper(object):
 					nationality = history['nationality'],
 					height_cm = float(history['height_cm']),
 					weight_kg = float(history['weight_kg']),
-					sherdog_id = 0, #TODO
 					wins = history['wins'],
 					losses = history['losses'],
-					draws = history['draws']
+					draws = history['draws'],
+					sherdog_id = history['sherdog_id'],
+					image_url = history['image_url'],
+					f_url = history['f_url']
 					)
 
 				print "FIGHTER TO SAVE:", a_fighter
@@ -145,17 +147,26 @@ class Scraper(object):
 						_round = history['children'][i]['_round'],
 						#round_time = history['children'][i]['round_time'], TODO
 						total_time = history['children'][i]['total_time'],
-						value = history['children'][i]['value']
+						value = history['children'][i]['value'],
+						sherdog_id = history['children'][i]['sherdog_id'],
+						o_url = history['children'][i]['o_url']
 						)
 					o.save()
 					a_fighter.children.add(o)
 					all_opponents.append(o)
 
 
+		"""
+		This is what gets saved to the DB
+		"""
+
 		obj = [{'fighter_name': b.fighter_name, 'sherdog_id': b.sherdog_id, 'value': b.value,
+		'image_url': b.image_url, 'f_url': b.f_url, 'wins': b.wins, 'losses': b.losses, 'draws': b.draws,
+		'weight_kg': b.weight_kg, 'nationality': b.nationality,
 		'children': [{'opponent': a.opponent, 'win_loss': a.win_loss, '_event': a._event, 
 		'date': a.date, 'method_general': a.method_general,
 		'method_specific': a.method_specific, 'referee': a.referee,
+		'o_url': a.o_url, 'sherdog_id': sherdog_id,
 		'_round': a._round, 'total_time': a.total_time, 'value': a.value } for a in b.children.all()]} for b in Fighter.objects.filter(fighter_name=clean_name).prefetch_related('children')]
 
 
@@ -166,7 +177,7 @@ class Scraper(object):
 		return history
 
 
-	def process_fighter(self, url):
+	def process_fighter(self, url, sherdog_id):
 
 		"""Fetch a url and return its contents as a string"""
 		
@@ -233,7 +244,10 @@ class Scraper(object):
 		last_fight = datetime.strptime(last_fight, '%b / %d / %Y')
 		last_fight = last_fight.isoformat()
 
-			# build a dict with the scraped data and return it
+		profile_image = soup.find('img', {'class': 'profile_image photo'})
+		image_url = profile_image["src"]
+
+			# build a dict with the scraped data and return it for use later
 		result = {
 			'name': fighter_namey,
 			'birth_date': birth_date,
@@ -242,11 +256,13 @@ class Scraper(object):
 			'height_cm': height_cm,
 			'weight_kg': weight_kg,
 			'camp_team': camp_team,
-			#'id': fighter_id,
 			'wins': wld['wins'],
 			'losses': wld['losses'],
 			'draws': wld['draws'],
 			'last_fight': last_fight,
+			'sherdog_id': sherdog_id,
+			'_url': updated_url,
+			'image_url': image_url
 			}
 
 
@@ -358,6 +374,57 @@ class Scraper(object):
 				pass
 
 
+		def extract_mini_link(cell):
+			"""extracts just the fighter name section
+			of url
+			"""
+			anchors = cell.find_all('a')
+			try:
+				for a in anchors:
+					edited = a['href'].strip('/fighter/')
+					result = ''.join([i for i in edited if not i.isdigit()])
+					result = result.rstrip('-')
+					print "edited", result
+					return result
+			except:
+				print "NO!"
+				return "NA"
+
+		def extract_full_link(cell):
+			anchors = cell.find_all('a')
+			try:
+				for a in anchors:
+					edited = self.base_url + a['href']
+					print "edited", edited
+					return edited
+			except:
+				print "NO!"
+				return "NA"
+
+
+		def extract_sherdog(cell):
+			print "THE RAW: ", cell
+			anchors = cell.find_all('a')
+			try:
+				for a in anchors:
+					test = str(a['href'])
+					edited = ''.join([i for i in test if i.isdigit()]) # the part to omit
+					print edited
+					return edited
+			except:
+				print "NO!"
+				return "NA"
+
+		def extract_image(cell):
+			print "THE RAW: ", cell
+			images = cell.find_all('img')
+			try:
+				for i in images:
+					return i['src']
+			except:
+				print "NO!"
+				return "NA"
+
 
 		records = {}
 		"""
@@ -399,6 +466,13 @@ class Scraper(object):
 		table_number = get_table_number(soup)
 		records = soup.findAll('table')[table_number].findAll('tr')
 		
+
+		"""
+		This is where the scraped object is built
+		the data from "result" is lost after this
+		"""
+
+
 		d3 = {}
 		d3['fighter_name'] = result['name']
 		d3['birth_date'] = result['birth_date']
@@ -409,6 +483,9 @@ class Scraper(object):
 		d3['wins'] = result['wins']
 		d3['losses'] = result['losses']
 		d3['draws'] = result['draws']
+		d3['sherdog_id'] = result['sherdog_id']
+		d3['f_url'] = result['_url']
+		d3['image_url'] = result['image_url']
 
 
 		d3['value'] = 100 #should be total career fight time in seconds TODO
@@ -418,8 +495,6 @@ class Scraper(object):
 		
 		for row in records:
 			cells = row.find_all('td')
-
-			
 
 			content = {
 
@@ -433,23 +508,19 @@ class Scraper(object):
 				"_round": cells[4].get_text(),
 				"round_time": cells[5].get_text(),
 				"total_time": get_total_time(cells[5].get_text(), cells[4].get_text()),
-				"value": get_total_time(cells[5].get_text(), cells[4].get_text())
-				#"value": 25 #required for D3 graphing TODO: use time value in seconds
+				"value": get_total_time(cells[5].get_text(), cells[4].get_text()),
+				"o_url": extract_full_link(cells[1]), # for our purposes here, should make this the FULL url
+				"sherdog_id": extract_sherdog(cells[1]),
+				#"image_url": extract_image(cells[0]), #more complex
 			}
-
-
 
 			d3['children'].append(content)
 			
-		#print "D3 DATA (pre-cleanup):", d3
-
-
 		def clean_up(history):
 			#remove the first entry as these are just row titles
 			d3['children'].pop(0) 
 
 		clean_up(d3)
-
 
 		#now let's create the total career time
 
