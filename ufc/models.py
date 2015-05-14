@@ -28,7 +28,7 @@ class Opponent(models.Model):
 
 	sherdog_id = models.IntegerField(default=0, null=True)
 	o_url = models.CharField(max_length=200, default="na", null=True)
-	image_url = models.CharField(max_length=200, default="na", null=True)
+	#image_url = models.CharField(max_length=200, default="na", null=True) more problematic - requires following the link
 
 	def __unicode__(self): # __str__ on Python 3
 		return self.opponent

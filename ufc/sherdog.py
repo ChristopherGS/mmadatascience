@@ -22,9 +22,11 @@ TODO:
 
 - get all the data in order (fix NAs and time issues)
 - figure out which bubble looks best
-- add stats
+- add stats / key
 
 6) deploy by end of weekend
+
+STALLED DUE to deployment challenges - next step: use Heroku, so will need to swap in postgres
 
 7) Fix responsive design
 
