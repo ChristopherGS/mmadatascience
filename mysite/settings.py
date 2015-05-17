@@ -143,7 +143,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': 'ufc/logs/debug.log',
+            'filename': os.path.join(DJANGO_ROOT, 'APPNAME.log'),
         },
     },
     'loggers': {
