@@ -43,7 +43,7 @@
 <ul id="search-results" class="text-center">
 {% for value in links %}
 
-	<li class="search-item"><a href="{{ request.build_absolute_uri }}/ufc/soup/{{value.result_url}}/{{value.result_sherdog_id}}">{{value.result_name}}</a></li>
+	<li class="search-item"><a href="/ufc/soup/{{value.result_url}}/{{value.result_sherdog_id}}">{{value.result_name}}</a></li>
 
 {% endfor %}
 </ul>
