@@ -478,7 +478,7 @@ class Scraper(object):
         d3['image_url'] = result['image_url']
 
 
-        d3['value'] = 100 #should be total career fight time in seconds TODO
+        d3['value'] = 100 # should be total career fight time in seconds TODO
         d3['total_fight_time'] = ""
         d3['children'] = []
         content = []
