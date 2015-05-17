@@ -1,4 +1,5 @@
 import json
+import logging
 import urllib2
 from datetime import datetime
 
@@ -14,6 +15,8 @@ from django.views.decorators.csrf import csrf_exempt
 import sherdog
 
 from .models import Fighter, SearchResult
+
+logger = logging.getLogger(__name__)
 
 
 def index(request):
