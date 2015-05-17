@@ -7,4 +7,3 @@ browser.get('http://localhost:8000')
 assert '' in browser.title
 
 if __name__ == '__main__'
-

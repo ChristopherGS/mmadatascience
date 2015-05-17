@@ -1,15 +1,13 @@
-import urllib2
-import requests
-import html5lib
-from datetime import datetime
 import json
+import urllib2
+from datetime import datetime
 
+import requests
 from bs4 import BeautifulSoup
-from ufc.models import Fighter
-from ufc.models import Opponent
-
 from django.core import serializers
 from django.forms.models import model_to_dict
+
+from ufc.models import Fighter, Opponent
 
 """
 TODO:

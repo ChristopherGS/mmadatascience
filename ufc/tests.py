@@ -1,17 +1,13 @@
-from django.test import TestCase
-from django.test import Client
-from django.http import HttpResponse, HttpRequest, HttpResponseRedirect
-
-from django.core.urlresolvers import reverse
-from django.core.urlresolvers import resolve
-
+from django.core.urlresolvers import resolve, reverse
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.template.loader import render_to_string
+from django.test import Client, TestCase
 
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+from ufc.views import index
 
 from .models import Fighter, SearchResult
-from ufc.views import index
 
 
 class WebTests(TestCase):
@@ -228,4 +224,3 @@ class BeautifulSoupTests(TestCase):
 A POST to the 'search' route should trigger a search query with Beautiful Soup
 and return a value
 """
- 

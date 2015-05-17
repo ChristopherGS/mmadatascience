@@ -1,21 +1,17 @@
-from django.shortcuts import render, redirect
-from django.http import HttpResponse, HttpRequest, HttpResponseRedirect
-from django.http import Http404
-from django.template import RequestContext, loader
-from django.shortcuts import get_object_or_404, render
-from bs4 import BeautifulSoup
-import sherdog
 import json
+import urllib2
 from datetime import datetime
+
+import requests
+from bs4 import BeautifulSoup
 from django.forms.models import model_to_dict
+from django.http import (Http404, HttpRequest, HttpResponse,
+                         HttpResponseRedirect, JsonResponse)
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template import RequestContext, loader
 from django.views.decorators.csrf import csrf_exempt
 
-from django.http import JsonResponse
-
-import urllib2
-import requests
-import html5lib
-
+import sherdog
 
 from .models import Fighter, SearchResult
 
@@ -152,6 +148,7 @@ def hunt(request):
 	context = {'links':search_results['bunch']}
 
 	#AIRPAIR QUESTION 3: This seems crap - shouldn't I do a redirect here? AND why doesnt the context work easily
+	# feel like I'm forced to rebuild the html, rather than letting another view handle it
 	return render(request, 'ufc/search.html', context)
 		
 
@@ -180,6 +177,3 @@ def beautiful_soup(request, fighter, sherdog_id):
 	context = {'history':json1, 'title_name':title_name, 'image_url': image_url}
 	#context = {'history':json1}
 	return render(request, 'ufc/results.html', context)
-		
-
-	
