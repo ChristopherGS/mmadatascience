@@ -13,6 +13,8 @@ staticfiles
 
 .env
 
+/venv
+
 # Distribution / packaging
 .Python
 env/
