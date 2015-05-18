@@ -277,7 +277,7 @@ class Processor(object):
             if isinstance (obj, datetime):
                 serial = obj.isoformat()
                 return serial
-        
+
         """
         1 = Ronda OK, 0 = Lyoto OK
         This is because there is an upcoming event for Ronda
@@ -286,7 +286,7 @@ class Processor(object):
         records = {}
         table_number = self.get_table_number(soup)
         records = soup.findAll('table')[table_number].findAll('tr')
-        
+
         """
         This is where the scraped object is built
         the data from "result" is lost after this

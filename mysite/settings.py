@@ -22,7 +22,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'mysite.settings'
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ['SECRET_KEY']
+SECRET_KEY = 'mjk37d#e!&_2g9e%^^*juvg_(#k&h(2kvf@^5cgptgv+p@6jrn'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -79,7 +79,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'yournewdb',
         'USER': 'christophersamiullah',
-        'PASSWORD': os.environ['DB_PW'],
+        'PASSWORD': '2274',
         'HOST': 'localhost',
         'PORT': '5432',
 
