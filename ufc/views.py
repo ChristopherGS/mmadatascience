@@ -13,14 +13,14 @@ from django.template import RequestContext, loader
 from django.views.decorators.csrf import csrf_exempt
 
 import sherdog
-from .models import Fighter, SearchResult
+from .models import Fighter, Opponent
 
 logger = logging.getLogger(__name__)
 
 
 def index(request):
     fighter_list = Fighter.objects.all()
-    context = {'fighter_list':fighter_list}
+    context = {'fighter_list': fighter_list}
     return render(request, 'ufc/index.html', context)
 
 
@@ -132,7 +132,7 @@ def hunt(request):
             fighter_info = fightfinder_result.find_all('tr')
         except Exception as e:
             logger.warning("no search results")
-            context = {'error':'No search results found'}
+            context = {'error': 'No search results found'}
             return render(request, 'ufc/search.html', context)
 
     search_results = create_results(fighter_info)
@@ -140,7 +140,7 @@ def hunt(request):
     # del the first result as that is the table headings
     del search_results['bunch'][0]
 
-    context = {'links':search_results['bunch']}
+    context = {'links': search_results['bunch']}
     return render(request, 'ufc/search.html', context)
         
 
@@ -162,5 +162,5 @@ def beautiful_soup(request, fighter, sherdog_id):
     title_name = history['fighter_name']
     image_url = history['image_url']
     history_json = json.dumps(history) 
-    context = {'history':history_json, 'title_name':title_name, 'image_url': image_url}
+    context = {'history': history_json, 'title_name': title_name, 'image_url': image_url}
     return render(request, 'ufc/results.html', context)
