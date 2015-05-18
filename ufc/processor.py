@@ -18,7 +18,6 @@ FIGHTER_URL = 'http://www.sherdog.com/stats/fightfinder'
 class Processor(object):
     """Handles the processing and saving
     of the fighter records"""
-
     def __init__(self, arg):
         super(Processor, self).__init__()
         self.arg = arg
@@ -142,32 +141,19 @@ class Processor(object):
         except:
             logger.warning('exception')
             return None
-
-    # FIND CORRECT TABLE ELEMENT
-    def get_table_number(self, soup):
-        correct_table = 0 # sensible default
-        for i in range(5):
-            find_right_table = soup.findAll('table')[i].findAll('tr')
-            for row in find_right_table:
-                cells = row.find_all('td')
-                try:
-                    if cells[0].get_text() == "Result" and cells[1].get_text() == "Fighter" and cells[3].get_text() == "Method/Referee":
-                        correct_table = i
-                        logger.debug("The correct table number is: ", correct_table) 
-                        return correct_table
-                except Exception as e:
-                    logger.warning("incorrect table")
-                finally:
-                    i = i + 1
         
     def process_fighter(self, url, sherdog_id):
 
-        """create the fighter object to send back to the sherdog.py"""
+        """Fetch a url and return its contents as a string"""
+
+        print "HERE AT PROCESS FIGHTER"
         
         updated_url = str(self.base_url) + url
         logger.debug("here is the url: %s" % updated_url)
+
         source = urllib2.urlopen(updated_url).read()
         soup = BeautifulSoup(source)
+
         fighter_name = soup.find_all("span", class_="fn")
         fighter_namey = soup.find('h1', {'itemprop': 'name'}).span.contents[0]
 
@@ -227,7 +213,7 @@ class Processor(object):
         profile_image = soup.find('img', {'class': 'profile_image photo'})
         image_url = profile_image["src"]
 
-        # build a dict with the scraped data and return it for use later
+            # build a dict with the scraped data and return it for use later
         result = {
             'name': fighter_namey,
             'birth_date': birth_date,
@@ -263,6 +249,7 @@ class Processor(object):
                 else:
                     date_string = eventString[index:]
                     date_string = date_string.replace(" / ", "-")
+                    date_string = date_string
 
                     try: 
                         actual_date = datetime.strptime(date_string, '%b-%d-%Y')
@@ -278,19 +265,50 @@ class Processor(object):
                 serial = obj.isoformat()
                 return serial
 
+        records = {}
         """
         1 = Ronda OK, 0 = Lyoto OK
         This is because there is an upcoming event for Ronda
+        We must make sure the table is correct.
+        It should have this initial HTML:
+        <table border="1">
+            <tr class="table_head">
+                <td class="col_one">Result</td>
+                <td  class="col_two">Fighter</td>
+                <td  class="col_three">Event</td>
+                <td  class="col_four">Method/Referee</td>
+                <td  class="col_five">R</td>
+                <td  class="col_six">Time</td>
+            </tr>
         """
 
-        records = {}
-        table_number = self.get_table_number(soup)
+        # FIND CORRECT TABLE ELEMENT
+        def get_table_number(soup):
+            correct_table = 0 # sensible default
+            for i in range(5):
+                find_right_table = soup.findAll('table')[i].findAll('tr')
+                for row in find_right_table:
+                    cells = row.find_all('td')
+                    try:
+                        if cells[0].get_text() == "Result" and cells[1].get_text() == "Fighter" and cells[3].get_text() == "Method/Referee":
+                            correct_table = i
+                            logger.debug("The correct table number is: ", correct_table) 
+                            return correct_table
+                    except Exception as e:
+                        logger.warning("incorrect table")
+                    finally:
+                        i = i + 1
+
+
+        table_number = get_table_number(soup)
         records = soup.findAll('table')[table_number].findAll('tr')
+        
 
         """
         This is where the scraped object is built
         the data from "result" is lost after this
         """
+
 
         d3 = {}
         d3['fighter_name'] = result['name']
@@ -359,6 +377,11 @@ class Processor(object):
         calc_career_time()
 
         return d3
+
+
+
+
+
 
 if __name__ == "__main__":
     pass
