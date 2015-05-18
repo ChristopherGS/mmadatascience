@@ -231,7 +231,7 @@ class Processor(object):
             'image_url': image_url
             }
 
-        def getDate(eventString):
+        def get_my_date(eventString):
             dateStrings = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
             conflicts = ["Jungle", "Maynard", "Mayhem", "March"]
 
@@ -338,7 +338,7 @@ class Processor(object):
                 "opponent": cells[1].get_text(),
                 "win_loss": cells[0].get_text(),
                 "_event": self.get_event(cells[2].get_text()),
-                "date": getDate(cells[2].get_text()),
+                "date": get_my_date(cells[2].get_text()),
                 "method_general": self.get_general_method(cells[3].get_text()),
                 "method_specific": self.get_specific_method(cells[3].get_text()),
                 "referee": self.get_ref(cells[3].get_text()),
