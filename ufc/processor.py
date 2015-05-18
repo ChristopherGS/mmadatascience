@@ -141,6 +141,23 @@ class Processor(object):
         except:
             logger.warning('exception')
             return None
+
+    # FIND CORRECT TABLE ELEMENT
+    def get_table_number(self, soup):
+        correct_table = 0 # sensible default
+        for i in range(5):
+            find_right_table = soup.findAll('table')[i].findAll('tr')
+            for row in find_right_table:
+                cells = row.find_all('td')
+                try:
+                    if cells[0].get_text() == "Result" and cells[1].get_text() == "Fighter" and cells[3].get_text() == "Method/Referee":
+                        correct_table = i
+                        logger.debug("The correct table number is: ", correct_table) 
+                        return correct_table
+                except Exception as e:
+                    logger.warning("incorrect table")
+                finally:
+                    i = i + 1
         
     def process_fighter(self, url, sherdog_id):
 
@@ -265,44 +282,15 @@ class Processor(object):
                 serial = obj.isoformat()
                 return serial
 
-        records = {}
+        
         """
         1 = Ronda OK, 0 = Lyoto OK
         This is because there is an upcoming event for Ronda
-        We must make sure the table is correct.
-        It should have this initial HTML:
-        <table border="1">
-            <tr class="table_head">
-                <td class="col_one">Result</td>
-                <td  class="col_two">Fighter</td>
-                <td  class="col_three">Event</td>
-                <td  class="col_four">Method/Referee</td>
-                <td  class="col_five">R</td>
-                <td  class="col_six">Time</td>
-            </tr>
         """
 
-        # FIND CORRECT TABLE ELEMENT
-        def get_table_number(soup):
-            correct_table = 0 # sensible default
-            for i in range(5):
-                find_right_table = soup.findAll('table')[i].findAll('tr')
-                for row in find_right_table:
-                    cells = row.find_all('td')
-                    try:
-                        if cells[0].get_text() == "Result" and cells[1].get_text() == "Fighter" and cells[3].get_text() == "Method/Referee":
-                            correct_table = i
-                            logger.debug("The correct table number is: ", correct_table) 
-                            return correct_table
-                    except Exception as e:
-                        logger.warning("incorrect table")
-                    finally:
-                        i = i + 1
-
-
-        table_number = get_table_number(soup)
+        records = {}
+        table_number = self.get_table_number(soup)
         records = soup.findAll('table')[table_number].findAll('tr')
-        
 
         """
         This is where the scraped object is built
