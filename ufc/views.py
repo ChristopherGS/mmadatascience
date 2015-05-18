@@ -18,8 +18,6 @@ from .models import Fighter, SearchResult
 logger = logging.getLogger(__name__)
 
 
-
-
 def index(request):
     fighter_list = Fighter.objects.all()
     context = {'fighter_list':fighter_list}
@@ -79,7 +77,29 @@ def extract_image(cell):
     except:
         return None
 
+def create_results(fighter_info):
+    """build an array for each fighter
+    with the specific info required to
+    create a link to their webpage"""
 
+    search_results = {}
+    search_results['bunch'] = []
+    for row in fighter_info:
+        cells = row.find_all('td')
+        try:
+            content = {
+                "result_name": cells[1].get_text(),
+                "result_url": extract_link(cells[1]),
+                "result_sherdog_id": extract_sherdog(cells[1]),
+                "result_image": extract_image(cells[0]),
+            }
+            
+        except Exception as e:
+            logger.warning("EXCEPTIoN")
+            content = {}
+        finally:
+            search_results['bunch'].append(content)
+            return search_resutls
 
 
 @csrf_exempt
@@ -105,36 +125,16 @@ def hunt(request):
 
         fightfinder_result = retrieve_results(full_name)
         
-
         # MANAGE THE EVENT OF NOT FINDING ANYTHING
 
         try: 
-            deeper = fightfinder_result.find_all('tr')
+            fighter_info = fightfinder_result.find_all('tr')
         except Exception as e:
             logger.warning("no search results")
             context = {'error':'No search results found'}
             return render(request, 'ufc/search.html', context)
 
-        search_results = {}
-        search_results['bunch'] = []
-
-        for row in deeper:
-            cells = row.find_all('td')
-            
-            try:
-                content = {
-                    "result_name": cells[1].get_text(),
-                    "result_url": extract_link(cells[1]),
-                    "result_sherdog_id": extract_sherdog(cells[1]),
-                    "result_image": extract_image(cells[0]),
-                }
-                
-            except Exception as e:
-                logger.warning("EXCEPTIoN")
-                content = {}
-            finally:
-                search_results['bunch'].append(content)
-
+    search_results = create_results(fighter_info)
 
     # del the first result as that is the table headings
     del search_results['bunch'][0]
@@ -142,7 +142,6 @@ def hunt(request):
     context = {'links':search_results['bunch']}
     return render(request, 'ufc/search.html', context)
         
-
 
 def beautiful_soup(request, fighter, sherdog_id):
 
