@@ -25,56 +25,22 @@ class Processor(object):
         self.base_url = SHERDOG_URL
         self.fighter_url = FIGHTER_URL
 
-    def getEvent(self, eventString):
-        dateStrings = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        for x in dateStrings:
-            index = eventString.find(x)
-            if (index == -1):
-                pass
-            else:
-                return eventString[:index]
-
-    def getDate(self, eventString):
-        dateStrings = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        conflicts = ["Jungle", "Maynard", "Mayhem", "March"]
-
-        for x in conflicts:
-            edge_case = eventString.find(x)
-            if (edge_case != -1):
-                return "*No date   " # hack
-
-        for x in dateStrings: # loop through date strings
-            # attempt to find one of the list items in the function argument
-            index = eventString.find(x) 
-
-            if (index == -1):
-                pass
-            else:
-                date_string = eventString[index:]
-                date_string = date_string.replace(" / ", "-")
-                date_string = date_string
-
-                try: 
-                    actual_date = datetime.strptime(date_string, '%b-%d-%Y')
-                    json_date = json.dumps(actual_date, default=json_serial)
-                except Exception as e:
-                    logger.warning('ERROR', e)
-                    json_date = None
-
-                return json_date
-
-    def json_serial(self, obj):
-        if isinstance (obj, datetime):
-            serial = obj.isoformat()
-            return serial
+    def get_event(self, eventString):
+            dateStrings = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+            for x in dateStrings:
+                index = eventString.find(x)
+                if (index == -1):
+                    pass
+                else:
+                    return eventString[:index]
 
     def get_general_method(self, eventString):
-            index = eventString.find('(')
-            if (index == -1):
-                pass
-            else:
-                general_method = eventString[:index].rstrip()
-                return general_method
+        index = eventString.find('(')
+        if (index == -1):
+            pass
+        else:
+            general_method = eventString[:index].rstrip()
+            return general_method
 
     def get_specific_method(self, eventString):
         index = eventString.find('(')
@@ -86,11 +52,11 @@ class Processor(object):
             return specific_method
 
     def get_ref(self, eventString):
-        index = eventString.find(')')
-        if (index == -1):
-            pass
-        else:
-            return eventString[index+1:]
+            index = eventString.find(')')
+            if (index == -1):
+                pass
+            else:
+                return eventString[index+1:]
 
     def get_sec(self, s):
         convert_to_string = str(s)
@@ -128,11 +94,11 @@ class Processor(object):
             logger.info("round", tround, type(tround))
             pass
 
+
     def extract_mini_link(self, cell):
         """extracts just the fighter name section
         of url
         """
-
         anchors = cell.find_all('a')
         try:
             for a in anchors:
@@ -177,10 +143,8 @@ class Processor(object):
             logger.warning('exception')
             return None
 
+    # FIND CORRECT TABLE ELEMENT
     def get_table_number(self, soup):
-        """find the correct table element, which varies
-        depending on the fighter schedule"""
-
         correct_table = 0 # sensible default
         for i in range(5):
             find_right_table = soup.findAll('table')[i].findAll('tr')
@@ -195,10 +159,10 @@ class Processor(object):
                     logger.warning("incorrect table")
                 finally:
                     i = i + 1
-
+        
     def process_fighter(self, url, sherdog_id):
 
-        """Fetch a url and return its contents as a string"""
+        """create the fighter object to send back to the sherdog.py"""
         
         updated_url = str(self.base_url) + url
         logger.debug("here is the url: %s" % updated_url)
@@ -281,10 +245,52 @@ class Processor(object):
             'image_url': image_url
             }
 
-        records = {}
+        def get_my_date(eventString):
+            dateStrings = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+            conflicts = ["Jungle", "Maynard", "Mayhem", "March"]
 
+            for x in conflicts:
+                edge_case = eventString.find(x)
+                if (edge_case != -1):
+                    return "*No date   " # hack
+
+            for x in dateStrings: # loop through date strings
+                # attempt to find one of the list items in the function argument
+                index = eventString.find(x) 
+
+                if (index == -1):
+                    pass
+                else:
+                    date_string = eventString[index:]
+                    date_string = date_string.replace(" / ", "-")
+
+                    try: 
+                        actual_date = datetime.strptime(date_string, '%b-%d-%Y')
+                        json_date = json.dumps(actual_date, default=json_serial)
+                    except Exception as e:
+                        logger.warning('ERROR', e)
+                        json_date = None
+
+                    return json_date
+
+        def json_serial(obj):
+            if isinstance (obj, datetime):
+                serial = obj.isoformat()
+                return serial
+        
+        """
+        1 = Ronda OK, 0 = Lyoto OK
+        This is because there is an upcoming event for Ronda
+        """
+
+        records = {}
         table_number = self.get_table_number(soup)
         records = soup.findAll('table')[table_number].findAll('tr')
+        
+        """
+        This is where the scraped object is built
+        the data from "result" is lost after this
+        """
 
         d3 = {}
         d3['fighter_name'] = result['name']
@@ -313,8 +319,8 @@ class Processor(object):
 
                 "opponent": cells[1].get_text(),
                 "win_loss": cells[0].get_text(),
-                "_event": self.getEvent(cells[2].get_text()),
-                "date": self.getDate(cells[2].get_text()),
+                "_event": self.get_event(cells[2].get_text()),
+                "date": get_my_date(cells[2].get_text()),
                 "method_general": self.get_general_method(cells[3].get_text()),
                 "method_specific": self.get_specific_method(cells[3].get_text()),
                 "referee": self.get_ref(cells[3].get_text()),
@@ -324,7 +330,7 @@ class Processor(object):
                 "value": self.get_total_time(cells[5].get_text(), cells[4].get_text()),
                 "o_url": self.extract_full_link(cells[1]), # for our purposes here, should make this the FULL url
                 "sherdog_id": self.extract_sherdog(cells[1]),
-                # "image_url": self.extract_image(cells[0]), #more complex
+                # "image_url": extract_image(cells[0]), #more complex
             }
 
             d3['children'].append(content)
