@@ -95,11 +95,12 @@ def create_results(fighter_info):
             }
             
         except Exception as e:
-            logger.warning("EXCEPTIoN")
+            logger.warning("Exception")
             content = {}
         finally:
             search_results['bunch'].append(content)
-            return search_resutls
+    
+    return search_results
 
 
 @csrf_exempt
