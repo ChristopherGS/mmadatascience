@@ -3,7 +3,6 @@ from datetime import datetime
 from django.db import models
 
 
-# Create your models here.
 
 
 # Many to many relationship (I presume?) because a fighter can have many opponents, and an opponent has fought many fighters.
