@@ -146,11 +146,6 @@ def hunt(request):
 
 def beautiful_soup(request, fighter, sherdog_id):
 
-    def json_serial(obj):
-        if isinstance (obj, datetime):
-            serial = obj.isoformat()
-            return serial
-
     scraper = sherdog.Scraper("test")
 
     try:    

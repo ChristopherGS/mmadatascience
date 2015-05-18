@@ -18,25 +18,192 @@ FIGHTER_URL = 'http://www.sherdog.com/stats/fightfinder'
 class Processor(object):
     """Handles the processing and saving
     of the fighter records"""
+
     def __init__(self, arg):
         super(Processor, self).__init__()
         self.arg = arg
         self.base_url = SHERDOG_URL
         self.fighter_url = FIGHTER_URL
+
+    def getEvent(self, eventString):
+        dateStrings = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        for x in dateStrings:
+            index = eventString.find(x)
+            if (index == -1):
+                pass
+            else:
+                return eventString[:index]
+
+    def getDate(self, eventString):
+        dateStrings = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        conflicts = ["Jungle", "Maynard", "Mayhem", "March"]
+
+        for x in conflicts:
+            edge_case = eventString.find(x)
+            if (edge_case != -1):
+                return "*No date   " # hack
+
+        for x in dateStrings: # loop through date strings
+            # attempt to find one of the list items in the function argument
+            index = eventString.find(x) 
+
+            if (index == -1):
+                pass
+            else:
+                date_string = eventString[index:]
+                date_string = date_string.replace(" / ", "-")
+                date_string = date_string
+
+                try: 
+                    actual_date = datetime.strptime(date_string, '%b-%d-%Y')
+                    json_date = json.dumps(actual_date, default=json_serial)
+                except Exception as e:
+                    logger.warning('ERROR', e)
+                    json_date = None
+
+                return json_date
+
+    def json_serial(self, obj):
+        if isinstance (obj, datetime):
+            serial = obj.isoformat()
+            return serial
+
+    def get_general_method(self, eventString):
+            index = eventString.find('(')
+            if (index == -1):
+                pass
+            else:
+                general_method = eventString[:index].rstrip()
+                return general_method
+
+    def get_specific_method(self, eventString):
+        index = eventString.find('(')
+        end_index = eventString.find(')')
+        if (index == -1):
+            pass
+        else:
+            specific_method = eventString[index+1:end_index].rstrip()
+            return specific_method
+
+    def get_ref(self, eventString):
+        index = eventString.find(')')
+        if (index == -1):
+            pass
+        else:
+            return eventString[index+1:]
+
+    def get_sec(self, s):
+        convert_to_string = str(s)
+        l = convert_to_string.split(':')
+        return int(l[0]) * 3600 + int(l[1]) * 60 + int(l[2])
+
+    def get_total_time(self, time, tround):
         
+        try:
+            around = int(tround)
+            the_round = around 
+
+            the_time = datetime.strptime(time, '%M:%S').time()
+            the_time = self.get_sec(the_time)
+            
+            total_fight_time = 0
+
+
+            if the_round == 1:
+                total_fight_time = the_time
+            elif the_round == 2:
+                total_fight_time = the_time + (5*60)
+            elif the_round == 3:
+                total_fight_time = the_time + (10*60)
+            elif the_round == 4:
+                total_fight_time = the_time + (15*60)
+            elif the_round == 5:
+                total_fight_time = the_time + (20*60)
+
+            return total_fight_time
+
+        except Exception as e:
+            logger.warning("Exception motherfucker!:", e)
+            logger.info("time", time, type(time))
+            logger.info("round", tround, type(tround))
+            pass
+
+    def extract_mini_link(self, cell):
+        """extracts just the fighter name section
+        of url
+        """
+
+        anchors = cell.find_all('a')
+        try:
+            for a in anchors:
+                edited = a['href'].strip('/fighter/')
+                result = ''.join([i for i in edited if not i.isdigit()])
+                result = result.rstrip('-')
+                logger.debug("edited", result)
+                return result
+        except:
+            logger.warning('error')
+            return None
+
+    def extract_full_link(self, cell):
+        anchors = cell.find_all('a')
+        try:
+            for a in anchors:
+                edited = self.base_url + a['href']
+                logger.debug('edited', edited)
+                return edited
+        except:
+            logger.warning('error')
+            return None
+
+    def extract_sherdog(self, cell):
+        anchors = cell.find_all('a')
+        try:
+            for a in anchors:
+                test = str(a['href'])
+                edited = ''.join([i for i in test if i.isdigit()]) # the part to omit
+                logger.debug(edited)
+                return edited
+        except:
+            logger.warning('exception')
+            return None
+
+    def extract_image(self, cell):
+        images = cell.find_all('img')
+        try:
+            for i in images:
+                return i['src']
+        except:
+            logger.warning('exception')
+            return None
+
+    def get_table_number(self, soup):
+        """find the correct table element, which varies
+        depending on the fighter schedule"""
+
+        correct_table = 0 # sensible default
+        for i in range(5):
+            find_right_table = soup.findAll('table')[i].findAll('tr')
+            for row in find_right_table:
+                cells = row.find_all('td')
+                try:
+                    if cells[0].get_text() == "Result" and cells[1].get_text() == "Fighter" and cells[3].get_text() == "Method/Referee":
+                        correct_table = i
+                        logger.debug("The correct table number is: ", correct_table) 
+                        return correct_table
+                except Exception as e:
+                    logger.warning("incorrect table")
+                finally:
+                    i = i + 1
 
     def process_fighter(self, url, sherdog_id):
 
         """Fetch a url and return its contents as a string"""
-
-        print "HERE AT PROCESS FIGHTER"
         
         updated_url = str(self.base_url) + url
         logger.debug("here is the url: %s" % updated_url)
-
         source = urllib2.urlopen(updated_url).read()
         soup = BeautifulSoup(source)
-
         fighter_name = soup.find_all("span", class_="fn")
         fighter_namey = soup.find('h1', {'itemprop': 'name'}).span.contents[0]
 
@@ -96,7 +263,7 @@ class Processor(object):
         profile_image = soup.find('img', {'class': 'profile_image photo'})
         image_url = profile_image["src"]
 
-            # build a dict with the scraped data and return it for use later
+        # build a dict with the scraped data and return it for use later
         result = {
             'name': fighter_namey,
             'birth_date': birth_date,
@@ -114,207 +281,10 @@ class Processor(object):
             'image_url': image_url
             }
 
-
-        def getEvent(eventString):
-            dateStrings = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-            for x in dateStrings:
-                index = eventString.find(x)
-                if (index == -1):
-                    pass
-                else:
-                    return eventString[:index]
-
-
-        def getDate(eventString):
-            dateStrings = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-            conflicts = ["Jungle", "Maynard", "Mayhem", "March"]
-
-            for x in conflicts:
-                edge_case = eventString.find(x)
-                if (edge_case != -1):
-                    return "*No date   " # hack
-
-            for x in dateStrings: # loop through date strings
-                # attempt to find one of the list items in the function argument
-                index = eventString.find(x) 
-
-                if (index == -1):
-                    pass
-                else:
-                    date_string = eventString[index:]
-                    date_string = date_string.replace(" / ", "-")
-                    date_string = date_string
-
-                    try: 
-                        actual_date = datetime.strptime(date_string, '%b-%d-%Y')
-                        json_date = json.dumps(actual_date, default=json_serial)
-                    except Exception as e:
-                        logger.warning('ERROR', e)
-                        json_date = None
-
-                    return json_date
-
-        def json_serial(obj):
-            if isinstance (obj, datetime):
-                serial = obj.isoformat()
-                return serial
-
-        def get_general_method(eventString):
-                index = eventString.find('(')
-                if (index == -1):
-                    pass
-                else:
-                    general_method = eventString[:index].rstrip()
-                    return general_method
-
-        def get_specific_method(eventString):
-            index = eventString.find('(')
-            end_index = eventString.find(')')
-            if (index == -1):
-                pass
-            else:
-                specific_method = eventString[index+1:end_index].rstrip()
-                return specific_method
-
-        def get_ref(eventString):
-            index = eventString.find(')')
-            if (index == -1):
-                pass
-            else:
-                return eventString[index+1:]
-
-        def get_sec(s):
-            convert_to_string = str(s)
-            l = convert_to_string.split(':')
-            return int(l[0]) * 3600 + int(l[1]) * 60 + int(l[2])
-
-
-        def get_total_time(time, tround):
-            
-            try:
-                around = int(tround)
-                the_round = around 
-
-                the_time = datetime.strptime(time, '%M:%S').time()
-                the_time = get_sec(the_time)
-                
-                total_fight_time = 0
-
-
-                if the_round == 1:
-                    total_fight_time = the_time
-                elif the_round == 2:
-                    total_fight_time = the_time + (5*60)
-                elif the_round == 3:
-                    total_fight_time = the_time + (10*60)
-                elif the_round == 4:
-                    total_fight_time = the_time + (15*60)
-                elif the_round == 5:
-                    total_fight_time = the_time + (20*60)
-
-                return total_fight_time
-
-            except Exception as e:
-                logger.warning("Exception motherfucker!:", e)
-                logger.info("time", time, type(time))
-                logger.info("round", tround, type(tround))
-                pass
-
-
-        def extract_mini_link(cell):
-            """extracts just the fighter name section
-            of url
-            """
-            anchors = cell.find_all('a')
-            try:
-                for a in anchors:
-                    edited = a['href'].strip('/fighter/')
-                    result = ''.join([i for i in edited if not i.isdigit()])
-                    result = result.rstrip('-')
-                    logger.debug("edited", result)
-                    return result
-            except:
-                logger.warning('error')
-                return None
-
-        def extract_full_link(cell):
-            anchors = cell.find_all('a')
-            try:
-                for a in anchors:
-                    edited = self.base_url + a['href']
-                    logger.debug('edited', edited)
-                    return edited
-            except:
-                logger.warning('error')
-                return None
-
-
-        def extract_sherdog(cell):
-            anchors = cell.find_all('a')
-            try:
-                for a in anchors:
-                    test = str(a['href'])
-                    edited = ''.join([i for i in test if i.isdigit()]) # the part to omit
-                    logger.debug(edited)
-                    return edited
-            except:
-                logger.warning('exception')
-                return None
-
-        def extract_image(cell):
-            images = cell.find_all('img')
-            try:
-                for i in images:
-                    return i['src']
-            except:
-                logger.warning('exception')
-                return None
-
-
         records = {}
-        """
-        1 = Ronda OK, 0 = Lyoto OK
-        This is because there is an upcoming event for Ronda
-        We must make sure the table is correct.
-        It should have this initial HTML:
-        <table border="1">
-            <tr class="table_head">
-                <td class="col_one">Result</td>
-                <td  class="col_two">Fighter</td>
-                <td  class="col_three">Event</td>
-                <td  class="col_four">Method/Referee</td>
-                <td  class="col_five">R</td>
-                <td  class="col_six">Time</td>
-            </tr>
-        """
 
-        # FIND CORRECT TABLE ELEMENT
-        def get_table_number(soup):
-            correct_table = 0 # sensible default
-            for i in range(5):
-                find_right_table = soup.findAll('table')[i].findAll('tr')
-                for row in find_right_table:
-                    cells = row.find_all('td')
-                    try:
-                        if cells[0].get_text() == "Result" and cells[1].get_text() == "Fighter" and cells[3].get_text() == "Method/Referee":
-                            correct_table = i
-                            logger.debug("The correct table number is: ", correct_table) 
-                            return correct_table
-                    except Exception as e:
-                        logger.warning("incorrect table")
-                    finally:
-                        i = i + 1
-
-
-        table_number = get_table_number(soup)
+        table_number = self.get_table_number(soup)
         records = soup.findAll('table')[table_number].findAll('tr')
-        
-
-        """
-        This is where the scraped object is built
-        the data from "result" is lost after this
-        """
-
 
         d3 = {}
         d3['fighter_name'] = result['name']
@@ -343,18 +313,18 @@ class Processor(object):
 
                 "opponent": cells[1].get_text(),
                 "win_loss": cells[0].get_text(),
-                "_event": getEvent(cells[2].get_text()),
-                "date": getDate(cells[2].get_text()),
-                "method_general": get_general_method(cells[3].get_text()),
-                "method_specific": get_specific_method(cells[3].get_text()),
-                "referee": get_ref(cells[3].get_text()),
+                "_event": self.getEvent(cells[2].get_text()),
+                "date": self.getDate(cells[2].get_text()),
+                "method_general": self.get_general_method(cells[3].get_text()),
+                "method_specific": self.get_specific_method(cells[3].get_text()),
+                "referee": self.get_ref(cells[3].get_text()),
                 "_round": cells[4].get_text(),
                 "round_time": cells[5].get_text(),
-                "total_time": get_total_time(cells[5].get_text(), cells[4].get_text()),
-                "value": get_total_time(cells[5].get_text(), cells[4].get_text()),
-                "o_url": extract_full_link(cells[1]), # for our purposes here, should make this the FULL url
-                "sherdog_id": extract_sherdog(cells[1]),
-                # "image_url": extract_image(cells[0]), #more complex
+                "total_time": self.get_total_time(cells[5].get_text(), cells[4].get_text()),
+                "value": self.get_total_time(cells[5].get_text(), cells[4].get_text()),
+                "o_url": self.extract_full_link(cells[1]), # for our purposes here, should make this the FULL url
+                "sherdog_id": self.extract_sherdog(cells[1]),
+                # "image_url": self.extract_image(cells[0]), #more complex
             }
 
             d3['children'].append(content)
@@ -383,11 +353,6 @@ class Processor(object):
         calc_career_time()
 
         return d3
-
-
-
-
-
 
 if __name__ == "__main__":
     pass
