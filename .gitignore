@@ -11,6 +11,8 @@ __pycache__/
 venv
 staticfiles
 
+.env
+
 # Distribution / packaging
 .Python
 env/
