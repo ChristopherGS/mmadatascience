@@ -16,9 +16,6 @@ logger = logging.getLogger(__name__)
 SHERDOG_URL = 'http://www.sherdog.com'
 FIGHTER_URL = 'http://www.sherdog.com/stats/fightfinder'
 
-
-
-
 class Scraper(object):
     """This class handles the pure scraping
     of the data"""
@@ -74,9 +71,7 @@ class Scraper(object):
         base_url = str(self.base_url)
         clean_name = name.replace("-", " ")
 
-        logger.info('Something went wrong!')
-
-        # check if fighter is in the DB, if it is return the data"""
+        # check if fighter is in the DB, if it is return the data
         load_check = self.check_db_for_fighter(clean_name)
         logger.info('LOAD CHECK', load_check)
 
@@ -92,8 +87,6 @@ class Scraper(object):
             tool = processor.Processor('test')
             history = tool.process_fighter('/fighter/%s-%s' % (name, sherdog_id), sherdog_id)
 
-            # At this point we've captured the data 
-            # let's save it to the DB IF it is new TODO: improve check
             if self.check_db_for_fighter(clean_name) == False:
 
                 full_name = str(history['fighter_name']).split(' ')
@@ -145,8 +138,6 @@ class Scraper(object):
                     o.save()
                     a_fighter.children.add(o)
                     all_opponents.append(o)
-
-
         
         # This is what gets saved to the DB
         
@@ -173,7 +164,8 @@ class Scraper(object):
         'sherdog_id': sherdog_id,
         '_round': a._round, 
         'total_time': a.total_time, 
-        'value': a.value } for a in b.children.all()]} for b in Fighter.objects.filter(fighter_name=clean_name).prefetch_related('children')]
+        'value': a.value }
+        for a in b.children.all()]} for b in Fighter.objects.filter(fighter_name=clean_name).prefetch_related('children')]
 
         logger.debug("DATA HAS BEEN SCRAPED")
         return history

@@ -23,8 +23,125 @@ class Processor(object):
         self.arg = arg
         self.base_url = SHERDOG_URL
         self.fighter_url = FIGHTER_URL
-        
 
+    def get_event(self, eventString):
+            dateStrings = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+            for x in dateStrings:
+                index = eventString.find(x)
+                if (index == -1):
+                    pass
+                else:
+                    return eventString[:index]
+
+    def get_general_method(self, eventString):
+        index = eventString.find('(')
+        if (index == -1):
+            pass
+        else:
+            general_method = eventString[:index].rstrip()
+            return general_method
+
+    def get_specific_method(self, eventString):
+        index = eventString.find('(')
+        end_index = eventString.find(')')
+        if (index == -1):
+            pass
+        else:
+            specific_method = eventString[index+1:end_index].rstrip()
+            return specific_method
+
+    def get_ref(self, eventString):
+            index = eventString.find(')')
+            if (index == -1):
+                pass
+            else:
+                return eventString[index+1:]
+
+    def get_sec(self, s):
+        convert_to_string = str(s)
+        l = convert_to_string.split(':')
+        return int(l[0]) * 3600 + int(l[1]) * 60 + int(l[2])
+
+    def get_total_time(self, time, tround):
+        
+        try:
+            around = int(tround)
+            the_round = around 
+
+            the_time = datetime.strptime(time, '%M:%S').time()
+            the_time = self.get_sec(the_time)
+            
+            total_fight_time = 0
+
+
+            if the_round == 1:
+                total_fight_time = the_time
+            elif the_round == 2:
+                total_fight_time = the_time + (5*60)
+            elif the_round == 3:
+                total_fight_time = the_time + (10*60)
+            elif the_round == 4:
+                total_fight_time = the_time + (15*60)
+            elif the_round == 5:
+                total_fight_time = the_time + (20*60)
+
+            return total_fight_time
+
+        except Exception as e:
+            logger.warning("Exception motherfucker!:", e)
+            logger.info("time", time, type(time))
+            logger.info("round", tround, type(tround))
+            pass
+
+
+    def extract_mini_link(self, cell):
+        """extracts just the fighter name section
+        of url
+        """
+        anchors = cell.find_all('a')
+        try:
+            for a in anchors:
+                edited = a['href'].strip('/fighter/')
+                result = ''.join([i for i in edited if not i.isdigit()])
+                result = result.rstrip('-')
+                logger.debug("edited", result)
+                return result
+        except:
+            logger.warning('error')
+            return None
+
+    def extract_full_link(self, cell):
+        anchors = cell.find_all('a')
+        try:
+            for a in anchors:
+                edited = self.base_url + a['href']
+                logger.debug('edited', edited)
+                return edited
+        except:
+            logger.warning('error')
+            return None
+
+    def extract_sherdog(self, cell):
+        anchors = cell.find_all('a')
+        try:
+            for a in anchors:
+                test = str(a['href'])
+                edited = ''.join([i for i in test if i.isdigit()]) # the part to omit
+                logger.debug(edited)
+                return edited
+        except:
+            logger.warning('exception')
+            return None
+
+    def extract_image(self, cell):
+        images = cell.find_all('img')
+        try:
+            for i in images:
+                return i['src']
+        except:
+            logger.warning('exception')
+            return None
+        
     def process_fighter(self, url, sherdog_id):
 
         """Fetch a url and return its contents as a string"""
@@ -114,17 +231,6 @@ class Processor(object):
             'image_url': image_url
             }
 
-
-        def getEvent(eventString):
-            dateStrings = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-            for x in dateStrings:
-                index = eventString.find(x)
-                if (index == -1):
-                    pass
-                else:
-                    return eventString[:index]
-
-
         def getDate(eventString):
             dateStrings = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
             conflicts = ["Jungle", "Maynard", "Mayhem", "March"]
@@ -158,118 +264,6 @@ class Processor(object):
             if isinstance (obj, datetime):
                 serial = obj.isoformat()
                 return serial
-
-        def get_general_method(eventString):
-                index = eventString.find('(')
-                if (index == -1):
-                    pass
-                else:
-                    general_method = eventString[:index].rstrip()
-                    return general_method
-
-        def get_specific_method(eventString):
-            index = eventString.find('(')
-            end_index = eventString.find(')')
-            if (index == -1):
-                pass
-            else:
-                specific_method = eventString[index+1:end_index].rstrip()
-                return specific_method
-
-        def get_ref(eventString):
-            index = eventString.find(')')
-            if (index == -1):
-                pass
-            else:
-                return eventString[index+1:]
-
-        def get_sec(s):
-            convert_to_string = str(s)
-            l = convert_to_string.split(':')
-            return int(l[0]) * 3600 + int(l[1]) * 60 + int(l[2])
-
-
-        def get_total_time(time, tround):
-            
-            try:
-                around = int(tround)
-                the_round = around 
-
-                the_time = datetime.strptime(time, '%M:%S').time()
-                the_time = get_sec(the_time)
-                
-                total_fight_time = 0
-
-
-                if the_round == 1:
-                    total_fight_time = the_time
-                elif the_round == 2:
-                    total_fight_time = the_time + (5*60)
-                elif the_round == 3:
-                    total_fight_time = the_time + (10*60)
-                elif the_round == 4:
-                    total_fight_time = the_time + (15*60)
-                elif the_round == 5:
-                    total_fight_time = the_time + (20*60)
-
-                return total_fight_time
-
-            except Exception as e:
-                logger.warning("Exception motherfucker!:", e)
-                logger.info("time", time, type(time))
-                logger.info("round", tround, type(tround))
-                pass
-
-
-        def extract_mini_link(cell):
-            """extracts just the fighter name section
-            of url
-            """
-            anchors = cell.find_all('a')
-            try:
-                for a in anchors:
-                    edited = a['href'].strip('/fighter/')
-                    result = ''.join([i for i in edited if not i.isdigit()])
-                    result = result.rstrip('-')
-                    logger.debug("edited", result)
-                    return result
-            except:
-                logger.warning('error')
-                return None
-
-        def extract_full_link(cell):
-            anchors = cell.find_all('a')
-            try:
-                for a in anchors:
-                    edited = self.base_url + a['href']
-                    logger.debug('edited', edited)
-                    return edited
-            except:
-                logger.warning('error')
-                return None
-
-
-        def extract_sherdog(cell):
-            anchors = cell.find_all('a')
-            try:
-                for a in anchors:
-                    test = str(a['href'])
-                    edited = ''.join([i for i in test if i.isdigit()]) # the part to omit
-                    logger.debug(edited)
-                    return edited
-            except:
-                logger.warning('exception')
-                return None
-
-        def extract_image(cell):
-            images = cell.find_all('img')
-            try:
-                for i in images:
-                    return i['src']
-            except:
-                logger.warning('exception')
-                return None
-
 
         records = {}
         """
@@ -343,17 +337,17 @@ class Processor(object):
 
                 "opponent": cells[1].get_text(),
                 "win_loss": cells[0].get_text(),
-                "_event": getEvent(cells[2].get_text()),
+                "_event": self.get_event(cells[2].get_text()),
                 "date": getDate(cells[2].get_text()),
-                "method_general": get_general_method(cells[3].get_text()),
-                "method_specific": get_specific_method(cells[3].get_text()),
-                "referee": get_ref(cells[3].get_text()),
+                "method_general": self.get_general_method(cells[3].get_text()),
+                "method_specific": self.get_specific_method(cells[3].get_text()),
+                "referee": self.get_ref(cells[3].get_text()),
                 "_round": cells[4].get_text(),
                 "round_time": cells[5].get_text(),
-                "total_time": get_total_time(cells[5].get_text(), cells[4].get_text()),
-                "value": get_total_time(cells[5].get_text(), cells[4].get_text()),
-                "o_url": extract_full_link(cells[1]), # for our purposes here, should make this the FULL url
-                "sherdog_id": extract_sherdog(cells[1]),
+                "total_time": self.get_total_time(cells[5].get_text(), cells[4].get_text()),
+                "value": self.get_total_time(cells[5].get_text(), cells[4].get_text()),
+                "o_url": self.extract_full_link(cells[1]), # for our purposes here, should make this the FULL url
+                "sherdog_id": self.extract_sherdog(cells[1]),
                 # "image_url": extract_image(cells[0]), #more complex
             }
 
